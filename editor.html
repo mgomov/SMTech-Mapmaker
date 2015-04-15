@@ -151,7 +151,6 @@ var Editor = function(vertices, segments){
 Editor.prototype.mouseDown = function(e){
 	this.dragStart.x = e.x;
 	this.dragStart.y = e.y;
-	console.log("Mousedown");
 	this.mouseIsDown = true;
 };
 
@@ -162,8 +161,6 @@ Editor.prototype.mouseUp = function(e){
 	} else {
 		// else, stop dragging a vertex
 		this.draggingVertex = 0;
-		console.log("Drag end");
-		console.log("");
 	}
 
 	// manage state (not dragging anymore since button was released)
@@ -180,12 +177,12 @@ Editor.prototype.mouseClick = function(e){
 		} else {
 			// if there's a selected pixel, try picking for another vertex to make a segment
 			linePt = this.pick({x:e.x, y:e.y});
-			console.log(this.segments);
 			if(linePt != 0){
 				if(this.selected.connected.indexOf(linePt) == -1){
 					this.segments.push([this.selected, linePt]);
 					this.selected.connected.push(linePt);
 					linePt.connected.push(this.selected);
+					log(['adding segment', this.selected.connected, linePt.connected]);
 				}
 			}
 		}
@@ -193,47 +190,61 @@ Editor.prototype.mouseClick = function(e){
 		// reset the color of the last-picked vertex, since it's being unselected
 		if(this.selected != 0){
 			this.selected.currentColor = this.selected.color;
+			for(var i = 0; i < this.selectedChained.length; i++){
+				this.selectedChained[i].currentColor = this.selectedChained[i].color;
+			}
+			this.selectedChained = [];
 		}
 
 		// try picking for a vertex
 		this.selected = this.pick({x:e.x, y:e.y});
 
-		console.log(this.selected);
-
 		// there's a newly selected vertex now
 		if(this.selected != 0){
 			// select chain of vertices
+			
 			if(e.ctrlKey){
 				traversed = [];
 				// TODO replace with 2 stacks instead of a queue
 				toTraverse = [this.selected];
 				while(toTraverse.length != 0){
+					//log(["traversed:", traversed, "toTraverse:", toTraverse]);
 					current = toTraverse.shift();
-					traversed.push(current);
-					for(var i = 0; i < current.connected.length; i++){
-						if(traversed.indexOf(current.connected[i]) == -1 && toTraverse.indexOf(current.connected[i] == -1)){
-							toTraverse.push(current.connected[i]);
+					if(traversed.indexOf(current) == -1){
+						traversed.push(current);
+						for(var i = 0; i < current.connected.length; i++){
+							if(traversed.indexOf(current.connected[i]) == -1 && toTraverse.indexOf(current.connected[i] == -1)){
+								toTraverse.push(current.connected[i]);
+								log(["added traverse", current.connected[i].pos.x + ", " + current.connected[i].pos.y]);
+							}
 						}
 					}
 				}
 
 				for(var i = 0; i < traversed.length; i++){
-					traversed[i].color = traversed[i].chainedColor;
+					traversed[i].currentColor = traversed[i].chainedColor;
 				}
+				
+				traversed.splice(traversed.indexOf(this.selected), 1);
+				
+				this.selectedChained = traversed;
 			}
 			this.selected.currentColor = this.selected.pickedColor;
 		} 
-
-		console.log("Click");
-		console.log("");
 	}
 };
 
 Editor.prototype.mouseMove = function(e){
 	// update position of a vertex being dragged
 	if(this.draggingVertex != 0){
+		dx = this.draggingVertex.pos.x - e.x;
+		dy = this.draggingVertex.pos.y - e.y;
 		this.draggingVertex.pos.x = e.x;
 		this.draggingVertex.pos.y = e.y;
+		for(var i = 0; i < this.selectedChained.length; i++){
+			this.selectedChained[i].pos.x -= dx;
+			this.selectedChained[i].pos.y -= dy;
+		}
 	}
 
 	// dragging logic
@@ -254,17 +265,21 @@ Editor.prototype.mouseMove = function(e){
 Editor.prototype.pick = function(pos){
 	var picked = 0;
 	this.vertices.forEach(function(el, i, arr){
-			//console.log(el.pos);
-			if(Math.sqrt( Math.pow(pos.x - el.pos.x, 2) + Math.pow(pos.y - el.pos.y, 2)) < 2 * el.r ){
+		if(Math.sqrt( Math.pow(pos.x - el.pos.x, 2) + Math.pow(pos.y - el.pos.y, 2)) < 2 * el.r ){
 			picked = el;
 			return;
-			}
-			});
-	console.log("Picked:");
-	console.log(picked);
-	console.log('');
+		}
+	});
+	log(['Picked:', picked]);
 	return picked;
 };
+
+var log = function(args){
+	for(var i = 0; i < args.length; i++){
+		console.log(args[i]);
+	}
+	console.log("");
+}
 </script>
 
 </html>
