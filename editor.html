@@ -211,7 +211,7 @@ Editor.prototype.mouseClick = function(e){
 					current = toTraverse.shift();
 					traversed.push(current);
 					for(var i = 0; i < current.connected.length; i++){
-						if(traversed.indexOf(current.connected[i]) == -1 && toTraverse.indexOf(current.connected[i] == -1){
+						if(traversed.indexOf(current.connected[i]) == -1 && toTraverse.indexOf(current.connected[i] == -1)){
 							toTraverse.push(current.connected[i]);
 						}
 					}
