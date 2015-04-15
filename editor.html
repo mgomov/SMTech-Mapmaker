@@ -18,8 +18,10 @@ window.onload = function(){
 
 	var vertices = [];
 	var segments = [];
-	for(var i = 0; i < 1000; i++){
-		vertices.push(new vertex(i * 100, i * 100));
+	for(var i = 0; i < 10; i++){
+		for(var j = 0; j < 10; j++){
+			vertices.push(new vertex(i * 100, j * 100));
+		}
 	}
 
 	var mouseIsDown = false;
