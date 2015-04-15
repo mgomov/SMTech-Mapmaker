@@ -35,9 +35,9 @@ window.onload = function(){
 	canvas.onmouseup = editor.mup;
 	canvas.onmousemove = editor.mmove;
 
-	renderContext = new RenderContext(context, vertices, segments);
+	renderContext = new RenderContext(context, vertices, segments, editor);
 	window.requestAnimationFrame(function(delta){
-			renderContext.render(renderContext);
+			renderContext.render(renderContext, editor);
 			});
 }
 
@@ -69,22 +69,24 @@ var vertex = function(xpos, ypos){
 	this.pos = {x:xpos, y:ypos};
 	this.color = "#0000ff";
 	this.pickedColor = "#00ff00";
-	this.chainedColor = "#ffff00";
+	this.chainedColor = "#00ffff";
 	this.currentColor = this.color;
-	this.r = 10;
+	this.r = 7;
 	this.connected = [];
 };
 
-var RenderContext = function(context, vertices, segments){
+var RenderContext = function(context, vertices, segments, editor){
 	this.context = context;
 	this.segments = segments;
 	this.vertices = vertices;
+	this.editor = editor;
 };
 
-RenderContext.prototype.render = function(renderContext){
+RenderContext.prototype.render = function(renderContext, editor){
 	var verts = renderContext.vertices;
 	var segs = renderContext.segments;
 	var context = renderContext.context;
+	
 	drawWindow(context);
 
 	// draw vertices
@@ -108,9 +110,17 @@ RenderContext.prototype.render = function(renderContext){
 		context.stroke();
 	}
 
+	if(editor.dragging && editor.draggingVertex == 0){
+		context.beginPath();
+		context.strokeStyle = "#000ddd";
+		context.lineWidth = "1";
+		context.rect(editor.dragStart.x, editor.dragStart.y, editor.gsPos.x - editor.dragStart.x, editor.gsPos.y - editor.dragStart.y);
+		context.stroke();
+	}
+	
 	// go to the next frame
 	window.requestAnimationFrame(function(){
-			renderContext.render(renderContext);
+			renderContext.render(renderContext, editor);
 			});
 };
 
@@ -132,15 +142,17 @@ var Editor = function(vertices, segments){
 
 	// dragging logic
 	this.dragging = false;
-
-	this.dragTolerance = 10;
-
+	this.dragTolerance = 4;
 	this.dragStart = {};
 	this.dragStart.x = 0;
 	this.dragStart.y = 0;
-
 	// TODO change from 0 to undef or some other definition
 	this.draggingVertex = 0;
+	
+	// group select logic
+	this.gsPos = {};
+	this.gsPos.x = 0;
+	this.gsPos.y = 0;
 
 	// selected logic
 	// TODO change from 0 to undef or some other definition
@@ -151,6 +163,7 @@ var Editor = function(vertices, segments){
 Editor.prototype.mouseDown = function(e){
 	this.dragStart.x = e.x;
 	this.dragStart.y = e.y;
+	
 	this.mouseIsDown = true;
 };
 
@@ -160,7 +173,34 @@ Editor.prototype.mouseUp = function(e){
 		this.mouseClick(e)
 	} else {
 		// else, stop dragging a vertex
-		this.draggingVertex = 0;
+		if(this.draggingVertex != 0){
+			this.draggingVertex.currentColor = this.draggingVertex.color;
+			for(var i = 0; i < this.selectedChained.length; i++){
+				this.selectedChained[i].currentColor = this.selectedChained[i].color;
+			}
+			this.selectedChained = [];
+			this.draggingVertex = 0;
+		} else {
+			this.selectedChained = [];
+			this.selected = 0;
+			for(var i = 0; i < this.vertices.length; i++){
+				var vtx = this.vertices[i];
+				var tl = {x:Math.min(this.dragStart.x, this.gsPos.x), y:Math.min(this.dragStart.y, this.gsPos.y)};
+				var br = {x:Math.max(this.dragStart.x, this.gsPos.x), y:Math.max(this.dragStart.y, this.gsPos.y)};
+				
+				if(vtx.pos.x < br.x && vtx.pos.x > tl.x && vtx.pos.y > tl.y && vtx.pos.y < br.y){
+					if(this.selected == 0){
+						this.selected = vtx;
+						log([this.selected]);
+						this.selected.currentColor = this.selected.pickedColor;
+					} else {
+						this.selectedChained.push(vtx);
+						vtx.currentColor = vtx.chainedColor;
+					}
+				}
+			}
+			log([this.selectChained, this.selected]);
+		}
 	}
 
 	// manage state (not dragging anymore since button was released)
@@ -253,9 +293,31 @@ Editor.prototype.mouseMove = function(e){
 		// tolerated distance to register as a click instead
 		if(!this.dragging && Math.sqrt( Math.pow(this.dragStart.x - e.x, 2) + Math.pow(this.dragStart.y - e.y, 2)) > this.dragTolerance){
 			this.dragging = true;
-
 			// try picking a vertex to drag
+			var tmp = this.selected;
 			this.draggingVertex = this.pick(this.dragStart);
+			
+			if(this.selectedChained.indexOf(this.draggingVertex) != -1){
+				this.selectedChained.splice(this.selectedChained.indexOf(this.draggingVertex), 1);
+				this.selectedChained.push(tmp);
+				this.draggingVertex.currentColor = this.draggingVertex.pickedColor;
+				tmp.currentColor = tmp.chainedColor;
+			}
+		}
+		
+		if(this.dragging){
+			this.gsPos.x = e.x;
+			this.gsPos.y = e.y;
+			
+			if(this.draggingVertex == 0){
+				this.selected.currentColor = this.selected.color;
+				for(var i = 0; i < this.selectedChained.length; i++){
+					this.selectedChained[i].currentColor = this.selectedChained[i].color;
+				}
+				this.selectedChained = [];
+				this.draggingVertex = 0;
+				this.selected = 0;
+			}
 		}
 	}
 	return false;
