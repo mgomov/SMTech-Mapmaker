@@ -17,6 +17,7 @@
 		}
 		
 		var vertices = [];
+		var segments = [];
 		for(var i = 0; i < 10; i++){
 			vertices.push(new vertex(i * 100, i * 100));
 		}
@@ -27,7 +28,7 @@
 		dragOffset.x = 0;
 		dragOffset.y = 0;
 		
-		var editor = new Editor(vertices);
+		var editor = new Editor(vertices, segments);
 		
 		canvas.onmousedown = editor.mdown;
 		
@@ -35,7 +36,7 @@
 
 		canvas.onmousemove = editor.mmove;
 		
-		renderContext = new RenderContext(context, vertices);
+		renderContext = new RenderContext(context, vertices, segments);
 		window.requestAnimationFrame(function(delta){
 			renderContext.render(renderContext);
 		});
@@ -69,6 +70,8 @@
 	var vertex = function(xpos, ypos){
 		this.pos = {x:xpos, y:ypos};
 		this.color = "#0000ff";
+		this.pickedColor = "#00ff00";
+		this.currentColor = this.color;
 		this.r = 10;
 	};
 	
@@ -76,20 +79,33 @@
 	
 	};
 	
-	var RenderContext = function(context, vertices){
+	var RenderContext = function(context, vertices, segments){
 		this.context = context;
+		this.segments = segments;
 		this.vertices = vertices;
 	};
 	
 	RenderContext.prototype.render = function(renderContext){
 		var verts = renderContext.vertices;
+		var segs = renderContext.segments;
 		var context = renderContext.context;
 		drawWindow(context);
 		for(var i = 0; i < verts.length; i++){
-			context.fillStyle = verts[i].color;
-			context.strokeStyle = verts[i].color;
+			context.fillStyle = verts[i].currentColor;
+			context.strokeStyle = verts[i].currentColor;
 			context.beginPath();
 			context.arc(verts[i].pos.x, verts[i].pos.y, verts[i].r, 0, Math.PI*2, true);
+			context.stroke();
+		}
+		
+		for(var j = 0; j < segs.length; j++){
+			pt1 = segs[j][0];
+			pt2 = segs[j][1];
+			
+			context.strokeStyle = "#00ff00";
+			context.beginPath();
+			context.moveTo(pt1.pos.x, pt1.pos.y);
+			context.lineTo(pt2.pos.x, pt2.pos.y);
 			context.stroke();
 		}
 		
@@ -98,8 +114,9 @@
 		});
 	};
 	
-	var Editor = function(vertices){
+	var Editor = function(vertices, segments){
 		this.vertices = vertices;
+		this.segments = segments;
 		this.dragOffset = {};
 		this.dragOffset.x = 0;
 		this.dragOffset.y = 0;
@@ -113,6 +130,7 @@
 		this.mup = this.mouseUp.bind(this);
 		this.mmove = this.mouseMove.bind(this);
 		
+		// dragging logic
 		this.dragging = false;
 		
 		this.dragTolerance = 10;
@@ -122,6 +140,9 @@
 		this.dragStart.y = 0;
 		
 		this.draggingVertex = 0;
+		
+		// selected logic
+		this.selected = 0;
 	};
 	
 	Editor.prototype.mouseDown = function(e){
@@ -145,6 +166,30 @@
 	};
 	
 	Editor.prototype.mouseClick = function(e){
+		if(e.shiftKey){
+			if(this.selected == 0){
+				this.vertices.push(new vertex(e.x, e.y));
+			} else {
+				linePt = this.pick({x:e.x, y:e.y});
+				console.log(this.segments);
+				if(linePt != 0){
+					this.segments.push([this.selected, linePt]);
+				}
+			}
+		} else {
+			if(this.selected != 0){
+				this.selected.currentColor = this.selected.color;
+			}
+			this.selected = this.pick({x:e.x, y:e.y});
+			
+			console.log(this.selected);
+			
+			if(this.selected != 0){
+				this.selected.currentColor = this.selected.pickedColor;
+			} 
+			
+		
+		}
 		console.log("Click");
 		console.log("");
 	};
@@ -169,19 +214,17 @@
 	};
 	
 	Editor.prototype.pick = function(pos){
-	console.log(pos);
-	
-		console.log("Picking");
 		var picked = 0;
 		this.vertices.forEach(function(el, i, arr){
 			//console.log(el.pos);
 			if(Math.sqrt( Math.pow(pos.x - el.pos.x, 2) + Math.pow(pos.y - el.pos.y, 2)) < 2 * el.r ){
-				console.log(el);
 				picked = el;
 				return;
 			}
 		});
-		
+		console.log("Picked:");
+		console.log(picked);
+		console.log('');
 		return picked;
 	};
 	
