@@ -2,233 +2,267 @@
 <canvas id="canvas" style='position:absolute;top:0px;left:0px;'></canvas>
 
 <script>
-	window.onload = function(){
-		var canvas = document.getElementById("canvas");
-		var context = canvas.getContext('2d');
-		
+window.onload = function(){
+	var canvas = document.getElementById("canvas");
+	var context = canvas.getContext('2d');
+
+	canvas.width = document.body.clientWidth;
+	canvas.height = document.body.clientHeight;
+	drawWindow(context);
+
+	window.onresize = function(){
 		canvas.width = document.body.clientWidth;
 		canvas.height = document.body.clientHeight;
 		drawWindow(context);
-		
-		window.onresize = function(){
-			canvas.width = document.body.clientWidth;
-			canvas.height = document.body.clientHeight;
-			drawWindow(context);
-		}
-		
-		var vertices = [];
-		var segments = [];
-		for(var i = 0; i < 10; i++){
-			vertices.push(new vertex(i * 100, i * 100));
-		}
-		console.log(vertices);
-		
-		var mouseIsDown = false;
-		var dragOffset = {};
-		dragOffset.x = 0;
-		dragOffset.y = 0;
-		
-		var editor = new Editor(vertices, segments);
-		
-		canvas.onmousedown = editor.mdown;
-		
-		canvas.onmouseup = editor.mup;
-
-		canvas.onmousemove = editor.mmove;
-		
-		renderContext = new RenderContext(context, vertices, segments);
-		window.requestAnimationFrame(function(delta){
-			renderContext.render(renderContext);
-		});
 	}
-	
+
+	var vertices = [];
+	var segments = [];
+	for(var i = 0; i < 1000; i++){
+		vertices.push(new vertex(i * 100, i * 100));
+	}
+
+	var mouseIsDown = false;
+	var dragOffset = {};
+	dragOffset.x = 0;
+	dragOffset.y = 0;
+
+	var editor = new Editor(vertices, segments);
+
+	canvas.onmousedown = editor.mdown;
+	canvas.onmouseup = editor.mup;
+	canvas.onmousemove = editor.mmove;
+
+	renderContext = new RenderContext(context, vertices, segments);
+	window.requestAnimationFrame(function(delta){
+			renderContext.render(renderContext);
+			});
+}
+
 </script>
 
 <script>
-	drawWindow = function(context){
-		context.fillStyle = "#f0f0f0"; 
-		context.fillRect(0, 0, canvas.width, canvas.height);
-		
-		drawGrid(context);
-	};
-	
-	drawGrid = function(context){
-		for (var x = 0.5; x < canvas.width; x += 10) {
-			context.moveTo(x, 0);
-			context.lineTo(x, canvas.height);
-		}
+drawWindow = function(context){
+	context.fillStyle = "#f0f0f0"; 
+	context.fillRect(0, 0, canvas.width, canvas.height);
+	drawGrid(context);
+};
 
-		for (var y = 0.5; y < canvas.height; y += 10) {
-			context.moveTo(0, y);
-			context.lineTo(canvas.width, y);
-		}
-
-		context.strokeStyle = "#ddd";
-		context.stroke();	
+drawGrid = function(context){
+	for (var x = 0.5; x < canvas.width; x += 10) {
+		context.moveTo(x, 0);
+		context.lineTo(x, canvas.height);
 	}
-	
-	var vertex = function(xpos, ypos){
-		this.pos = {x:xpos, y:ypos};
-		this.color = "#0000ff";
-		this.pickedColor = "#00ff00";
-		this.currentColor = this.color;
-		this.r = 10;
-	};
-	
-	vertex.prototype.move = function(){
-	
-	};
-	
-	var RenderContext = function(context, vertices, segments){
-		this.context = context;
-		this.segments = segments;
-		this.vertices = vertices;
-	};
-	
-	RenderContext.prototype.render = function(renderContext){
-		var verts = renderContext.vertices;
-		var segs = renderContext.segments;
-		var context = renderContext.context;
-		drawWindow(context);
-		for(var i = 0; i < verts.length; i++){
-			context.fillStyle = verts[i].currentColor;
-			context.strokeStyle = verts[i].currentColor;
-			context.beginPath();
-			context.arc(verts[i].pos.x, verts[i].pos.y, verts[i].r, 0, Math.PI*2, true);
-			context.stroke();
-		}
-		
-		for(var j = 0; j < segs.length; j++){
-			pt1 = segs[j][0];
-			pt2 = segs[j][1];
-			
-			context.strokeStyle = "#00ff00";
-			context.beginPath();
-			context.moveTo(pt1.pos.x, pt1.pos.y);
-			context.lineTo(pt2.pos.x, pt2.pos.y);
-			context.stroke();
-		}
-		
-		window.requestAnimationFrame(function(){
+
+	for (var y = 0.5; y < canvas.height; y += 10) {
+		context.moveTo(0, y);
+		context.lineTo(canvas.width, y);
+	}
+
+	context.strokeStyle = "#ddd";
+	context.stroke();	
+}
+
+var vertex = function(xpos, ypos){
+	this.pos = {x:xpos, y:ypos};
+	this.color = "#0000ff";
+	this.pickedColor = "#00ff00";
+	this.chainedColor = "#ffff00";
+	this.currentColor = this.color;
+	this.r = 10;
+	this.connected = [];
+};
+
+var RenderContext = function(context, vertices, segments){
+	this.context = context;
+	this.segments = segments;
+	this.vertices = vertices;
+};
+
+RenderContext.prototype.render = function(renderContext){
+	var verts = renderContext.vertices;
+	var segs = renderContext.segments;
+	var context = renderContext.context;
+	drawWindow(context);
+
+	// draw vertices
+	for(var i = 0; i < verts.length; i++){
+		context.fillStyle = verts[i].currentColor;
+		context.strokeStyle = verts[i].currentColor;
+		context.beginPath();
+		context.arc(verts[i].pos.x, verts[i].pos.y, verts[i].r, 0, Math.PI*2, true);
+		context.stroke();
+	}
+
+	// draw segments
+	for(var j = 0; j < segs.length; j++){
+		pt1 = segs[j][0];
+		pt2 = segs[j][1];
+
+		context.strokeStyle = "#00ff00";
+		context.beginPath();
+		context.moveTo(pt1.pos.x, pt1.pos.y);
+		context.lineTo(pt2.pos.x, pt2.pos.y);
+		context.stroke();
+	}
+
+	// go to the next frame
+	window.requestAnimationFrame(function(){
 			renderContext.render(renderContext);
-		});
-	};
-	
-	var Editor = function(vertices, segments){
-		this.vertices = vertices;
-		this.segments = segments;
-		this.dragOffset = {};
-		this.dragOffset.x = 0;
-		this.dragOffset.y = 0;
-		
-		this.position = {};
-		this.position.x = 0;
-		this.position.y = 0;
-		
-		this.mouseIsDown = false;
-		this.mdown = this.mouseDown.bind(this);
-		this.mup = this.mouseUp.bind(this);
-		this.mmove = this.mouseMove.bind(this);
-		
-		// dragging logic
-		this.dragging = false;
-		
-		this.dragTolerance = 10;
-		
-		this.dragStart = {};
-		this.dragStart.x = 0;
-		this.dragStart.y = 0;
-		
+			});
+};
+
+var Editor = function(vertices, segments){
+	this.vertices = vertices;
+	this.segments = segments;
+	this.dragOffset = {};
+	this.dragOffset.x = 0;
+	this.dragOffset.y = 0;
+
+	this.position = {};
+	this.position.x = 0;
+	this.position.y = 0;
+
+	this.mouseIsDown = false;
+	this.mdown = this.mouseDown.bind(this);
+	this.mup = this.mouseUp.bind(this);
+	this.mmove = this.mouseMove.bind(this);
+
+	// dragging logic
+	this.dragging = false;
+
+	this.dragTolerance = 10;
+
+	this.dragStart = {};
+	this.dragStart.x = 0;
+	this.dragStart.y = 0;
+
+	// TODO change from 0 to undef or some other definition
+	this.draggingVertex = 0;
+
+	// selected logic
+	// TODO change from 0 to undef or some other definition
+	this.selected = 0;
+	this.selectedChained = [];
+};
+
+Editor.prototype.mouseDown = function(e){
+	this.dragStart.x = e.x;
+	this.dragStart.y = e.y;
+	console.log("Mousedown");
+	this.mouseIsDown = true;
+};
+
+Editor.prototype.mouseUp = function(e){
+	// if the user isn't dragging when they release the button, assume that it's a click
+	if(!this.dragging){
+		this.mouseClick(e)
+	} else {
+		// else, stop dragging a vertex
 		this.draggingVertex = 0;
-		
-		// selected logic
-		this.selected = 0;
-	};
-	
-	Editor.prototype.mouseDown = function(e){
-		this.dragStart.x = e.x;
-		this.dragStart.y = e.y;
-		console.log("Mousedown");
-		this.mouseIsDown = true;
-	};
-	
-	Editor.prototype.mouseUp = function(e){
-		if(!this.dragging){
-			this.mouseClick(e)
+		console.log("Drag end");
+		console.log("");
+	}
+
+	// manage state (not dragging anymore since button was released)
+	this.dragging = false;
+	this.mouseIsDown = false;
+};
+
+Editor.prototype.mouseClick = function(e){
+	// shift is the main modifier in the program
+	if(e.shiftKey){
+		// if there wasn't a vertex picked in mousedown, create a new vertex
+		if(this.selected == 0){
+			this.vertices.push(new vertex(e.x, e.y));
 		} else {
-			this.draggingVertex = 0;
-			console.log("Drag end");
-			console.log("");
-		}
-		
-		this.dragging = false;
-		this.mouseIsDown = false;
-	};
-	
-	Editor.prototype.mouseClick = function(e){
-		if(e.shiftKey){
-			if(this.selected == 0){
-				this.vertices.push(new vertex(e.x, e.y));
-			} else {
-				linePt = this.pick({x:e.x, y:e.y});
-				console.log(this.segments);
-				if(linePt != 0){
+			// if there's a selected pixel, try picking for another vertex to make a segment
+			linePt = this.pick({x:e.x, y:e.y});
+			console.log(this.segments);
+			if(linePt != 0){
+				if(this.selected.connected.indexOf(linePt) == -1){
 					this.segments.push([this.selected, linePt]);
+					this.selected.connected.push(linePt);
+					linePt.connected.push(this.selected);
 				}
 			}
-		} else {
-			if(this.selected != 0){
-				this.selected.currentColor = this.selected.color;
-			}
-			this.selected = this.pick({x:e.x, y:e.y});
-			
-			console.log(this.selected);
-			
-			if(this.selected != 0){
-				this.selected.currentColor = this.selected.pickedColor;
-			} 
-			
-		
 		}
+	} else {
+		// reset the color of the last-picked vertex, since it's being unselected
+		if(this.selected != 0){
+			this.selected.currentColor = this.selected.color;
+		}
+
+		// try picking for a vertex
+		this.selected = this.pick({x:e.x, y:e.y});
+
+		console.log(this.selected);
+
+		// there's a newly selected vertex now
+		if(this.selected != 0){
+			// select chain of vertices
+			if(e.ctrlKey){
+				traversed = [];
+				// TODO replace with 2 stacks instead of a queue
+				toTraverse = [this.selected];
+				while(toTraverse.length != 0){
+					current = toTraverse.shift();
+					traversed.push(current);
+					for(var i = 0; i < current.connected.length; i++){
+						if(traversed.indexOf(current.connected[i]) == -1 && toTraverse.indexOf(current.connected[i] == -1){
+							toTraverse.push(current.connected[i]);
+						}
+					}
+				}
+
+				for(var i = 0; i < traversed.length; i++){
+					traversed[i].color = traversed[i].chainedColor;
+				}
+			}
+			this.selected.currentColor = this.selected.pickedColor;
+		} 
+
 		console.log("Click");
 		console.log("");
-	};
-	
-	Editor.prototype.mouseMove = function(e){
+	}
+};
 
-		if(this.draggingVertex != 0){
-			this.draggingVertex.pos.x = e.x;
-			this.draggingVertex.pos.y = e.y;
+Editor.prototype.mouseMove = function(e){
+	// update position of a vertex being dragged
+	if(this.draggingVertex != 0){
+		this.draggingVertex.pos.x = e.x;
+		this.draggingVertex.pos.y = e.y;
+	}
+
+	// dragging logic
+	if(this.mouseIsDown){
+		// start dragging if not already dragging and the mouse has moved more than a certain
+		// tolerated distance to register as a click instead
+		if(!this.dragging && Math.sqrt( Math.pow(this.dragStart.x - e.x, 2) + Math.pow(this.dragStart.y - e.y, 2)) > this.dragTolerance){
+			this.dragging = true;
+
+			// try picking a vertex to drag
+			this.draggingVertex = this.pick(this.dragStart);
 		}
-		
-		if(this.mouseIsDown){
-			if(!this.dragging && Math.sqrt( Math.pow(this.dragStart.x - e.x, 2) + Math.pow(this.dragStart.y - e.y, 2)) > this.dragTolerance){
-				this.dragging = true;
-				this.draggingVertex = this.pick(this.dragStart);
-				console.log("picked:");
-				console.log(this.draggingVertex);
-				console.log("Drag");
-			}
-		}
-		return false;
-	};
-	
-	Editor.prototype.pick = function(pos){
-		var picked = 0;
-		this.vertices.forEach(function(el, i, arr){
+	}
+	return false;
+};
+
+// pick a vertex on click
+Editor.prototype.pick = function(pos){
+	var picked = 0;
+	this.vertices.forEach(function(el, i, arr){
 			//console.log(el.pos);
 			if(Math.sqrt( Math.pow(pos.x - el.pos.x, 2) + Math.pow(pos.y - el.pos.y, 2)) < 2 * el.r ){
-				picked = el;
-				return;
+			picked = el;
+			return;
 			}
-		});
-		console.log("Picked:");
-		console.log(picked);
-		console.log('');
-		return picked;
-	};
-	
-	
+			});
+	console.log("Picked:");
+	console.log(picked);
+	console.log('');
+	return picked;
+};
 </script>
 
 </html>
