@@ -1,5 +1,191 @@
 <html>
+<canvas id="canvas" style='position:absolute;top:0px;left:0px;'></canvas>
+
 <script>
-console.log("Hello world");
+	window.onload = function(){
+		var canvas = document.getElementById("canvas");
+		var context = canvas.getContext('2d');
+		
+		canvas.width = document.body.clientWidth;
+		canvas.height = document.body.clientHeight;
+		drawWindow(context);
+		
+		window.onresize = function(){
+			canvas.width = document.body.clientWidth;
+			canvas.height = document.body.clientHeight;
+			drawWindow(context);
+		}
+		
+		var vertices = [];
+		for(var i = 0; i < 10; i++){
+			vertices.push(new vertex(i * 100, i * 100));
+		}
+		console.log(vertices);
+		
+		var mouseIsDown = false;
+		var dragOffset = {};
+		dragOffset.x = 0;
+		dragOffset.y = 0;
+		
+		var editor = new Editor(vertices);
+		
+		canvas.onmousedown = editor.mdown;
+		
+		canvas.onmouseup = editor.mup;
+
+		canvas.onmousemove = editor.mmove;
+		
+		renderContext = new RenderContext(context, vertices);
+		window.requestAnimationFrame(function(delta){
+			renderContext.render(renderContext);
+		});
+	}
+	
 </script>
+
+<script>
+	drawWindow = function(context){
+		context.fillStyle = "#f0f0f0"; 
+		context.fillRect(0, 0, canvas.width, canvas.height);
+		
+		drawGrid(context);
+	};
+	
+	drawGrid = function(context){
+		for (var x = 0.5; x < canvas.width; x += 10) {
+			context.moveTo(x, 0);
+			context.lineTo(x, canvas.height);
+		}
+
+		for (var y = 0.5; y < canvas.height; y += 10) {
+			context.moveTo(0, y);
+			context.lineTo(canvas.width, y);
+		}
+
+		context.strokeStyle = "#ddd";
+		context.stroke();	
+	}
+	
+	var vertex = function(xpos, ypos){
+		this.pos = {x:xpos, y:ypos};
+		this.color = "#0000ff";
+		this.r = 10;
+	};
+	
+	vertex.prototype.move = function(){
+	
+	};
+	
+	var RenderContext = function(context, vertices){
+		this.context = context;
+		this.vertices = vertices;
+	};
+	
+	RenderContext.prototype.render = function(renderContext){
+		var verts = renderContext.vertices;
+		var context = renderContext.context;
+		drawWindow(context);
+		for(var i = 0; i < verts.length; i++){
+			context.fillStyle = verts[i].color;
+			context.strokeStyle = verts[i].color;
+			context.beginPath();
+			context.arc(verts[i].pos.x, verts[i].pos.y, verts[i].r, 0, Math.PI*2, true);
+			context.stroke();
+		}
+		
+		window.requestAnimationFrame(function(){
+			renderContext.render(renderContext);
+		});
+	};
+	
+	var Editor = function(vertices){
+		this.vertices = vertices;
+		this.dragOffset = {};
+		this.dragOffset.x = 0;
+		this.dragOffset.y = 0;
+		
+		this.position = {};
+		this.position.x = 0;
+		this.position.y = 0;
+		
+		this.mouseIsDown = false;
+		this.mdown = this.mouseDown.bind(this);
+		this.mup = this.mouseUp.bind(this);
+		this.mmove = this.mouseMove.bind(this);
+		
+		this.dragging = false;
+		
+		this.dragTolerance = 10;
+		
+		this.dragStart = {};
+		this.dragStart.x = 0;
+		this.dragStart.y = 0;
+		
+		this.draggingVertex = 0;
+	};
+	
+	Editor.prototype.mouseDown = function(e){
+		this.dragStart.x = e.x;
+		this.dragStart.y = e.y;
+		console.log("Mousedown");
+		this.mouseIsDown = true;
+	};
+	
+	Editor.prototype.mouseUp = function(e){
+		if(!this.dragging){
+			this.mouseClick(e)
+		} else {
+			this.draggingVertex = 0;
+			console.log("Drag end");
+			console.log("");
+		}
+		
+		this.dragging = false;
+		this.mouseIsDown = false;
+	};
+	
+	Editor.prototype.mouseClick = function(e){
+		console.log("Click");
+		console.log("");
+	};
+	
+	Editor.prototype.mouseMove = function(e){
+
+		if(this.draggingVertex != 0){
+			this.draggingVertex.pos.x = e.x;
+			this.draggingVertex.pos.y = e.y;
+		}
+		
+		if(this.mouseIsDown){
+			if(!this.dragging && Math.sqrt( Math.pow(this.dragStart.x - e.x, 2) + Math.pow(this.dragStart.y - e.y, 2)) > this.dragTolerance){
+				this.dragging = true;
+				this.draggingVertex = this.pick(this.dragStart);
+				console.log("picked:");
+				console.log(this.draggingVertex);
+				console.log("Drag");
+			}
+		}
+		return false;
+	};
+	
+	Editor.prototype.pick = function(pos){
+	console.log(pos);
+	
+		console.log("Picking");
+		var picked = 0;
+		this.vertices.forEach(function(el, i, arr){
+			//console.log(el.pos);
+			if(Math.sqrt( Math.pow(pos.x - el.pos.x, 2) + Math.pow(pos.y - el.pos.y, 2)) < 2 * el.r ){
+				console.log(el);
+				picked = el;
+				return;
+			}
+		});
+		
+		return picked;
+	};
+	
+	
+</script>
+
 </html>
