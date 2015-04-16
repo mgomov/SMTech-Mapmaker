@@ -125,7 +125,7 @@ var Editor = function(vertices, segments) {
             var segs = ed.segments;
             for (var i = 0; i < segs.length; i++) {
 			log([segs[i][2]], segs[i][2].slice(1, 6));
-                csv += segs[i][0].pos.x + "," + segs[i][0].pos.y + "," + segs[i][1].pos.x + "," + segs[i][1].pos.y + "," + parseInt(segs[i][2].replace("#", ""), 16) + (i == segs.length - 1 ? "" : ",");
+                csv += segs[i][0].pos.x + "," + segs[i][0].pos.y + "," + segs[i][1].pos.x + "," + segs[i][1].pos.y + "," + parseInt(segs[i][2].replace("#", ""), 16) + (i == segs.length - 1 ? "," : ",") /* broken loader, broken export, fix loader please*/;
             }
             console.log(csv);
             $("#export-window").val(csv);
