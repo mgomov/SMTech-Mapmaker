@@ -36,10 +36,12 @@ var Editor = function(vertices, segments) {
     // DELETE = del
     // COPY = ctrl + 'c'
     // PASTE = ctrl + 'v'
+	// MENU = 'h'
     this.keyEnum = Object.freeze({
         DELETE: 46,
         COPY: 67,
-        PASTE: 86
+        PASTE: 86,
+		MENU:72
     });
 
     // copy buffer to allow copying of various constructs
@@ -64,6 +66,10 @@ var Editor = function(vertices, segments) {
     this.snapToGridX = false;
     this.snapToGridY = false;
 
+	// current segment color to apply to new segments
+	this.segColor = "#00ff00";
+	this.randomColor = false;
+	
 
     var ed = this;
     // UI hooks
@@ -87,6 +93,16 @@ var Editor = function(vertices, segments) {
             ed.snapToGridY = false;
         }
     });
+	
+	$("#random-color").click(function() {
+        var $this = $(this);
+        // $this will contain a reference to the checkbox   
+        if ($this.is(':checked')) {
+            ed.randomColor = true;
+        } else {
+            ed.randomColor = false;
+        }
+    });
 
     $("#grid-size-go").click(function(e) {
         console.log(parseInt(ed.gridHeight));
@@ -108,14 +124,22 @@ var Editor = function(vertices, segments) {
             csv = "";
             var segs = ed.segments;
             for (var i = 0; i < segs.length; i++) {
-                csv += segs[i][0].pos.x + "," + segs[i][0].pos.y + "," + segs[i][1].pos.x + "," + segs[i][1].pos.y + "," + /* tmp color red */ 16711680 + (i == segs.length - 1 ? "" : ",");
+			log([segs[i][2]], segs[i][2].slice(1, 6));
+                csv += segs[i][0].pos.x + "," + segs[i][0].pos.y + "," + segs[i][1].pos.x + "," + segs[i][1].pos.y + "," + parseInt(segs[i][2].replace("#", ""), 16) + (i == segs.length - 1 ? "" : ",");
             }
             console.log(csv);
             $("#export-window").val(csv);
             console.log($("#export-window").val());
         }
     });
-
+	
+	$(function(){
+		$('.edcolorpicker').colorpicker();
+	});
+	
+	$('.edcolorpicker').colorpicker().on('changeColor.colorpicker', function(event){
+		ed.segColor = event.color.toHex();
+	});
 };
 
 Editor.prototype.keyDown = function(e) {
@@ -206,6 +230,9 @@ Editor.prototype.keyDown = function(e) {
 
             }
             break;
+		case this.keyEnum.MENU:
+			$("#menu").toggle();
+			break;
     }
 }
 
@@ -274,9 +301,13 @@ Editor.prototype.mouseClick = function(e) {
             });
             if (linePt) {
                 if (this.selected.connected.indexOf(linePt) == -1) {
-                    this.segments.push([this.selected, linePt]);
+                    this.segments.push([this.selected, linePt, this.segColor]);
                     this.selected.connected.push(linePt);
                     linePt.connected.push(this.selected);
+					if(this.randomColor){
+						this.segColor = '#'+Math.floor(Math.random()*16777215).toString(16); // js magic, http://www.paulirish.com/2009/random-hex-color-code-snippets/
+						$(".edcolorpicker input").val(this.segColor);
+					}
                 } else {
                     this.selected.connected.splice(this.selected.connected.indexOf(linePt), 1);
                     linePt.connected.splice(linePt.connected.indexOf(this.selected), 1);
@@ -464,7 +495,7 @@ Editor.prototype.createCopy = function(toCopy, cpySegs) {
     // verts list, create a new seg with the copied verts as endpoints
     for (var i = 0; i < cpySegs.length; i++) {
         if (cpySegs[i][0].__idx != undefined && cpySegs[i][1].__idx != undefined) {
-            copy.segs.push([copy.verts[cpySegs[i][0].__idx], copy.verts[cpySegs[i][1].__idx]]);
+            copy.segs.push([copy.verts[cpySegs[i][0].__idx], copy.verts[cpySegs[i][1].__idx]], cpySegs[i][2]);
             copy.verts[cpySegs[i][0].__idx].connected.push(copy.verts[cpySegs[i][1].__idx]);
             copy.verts[cpySegs[i][1].__idx].connected.push(copy.verts[cpySegs[i][0].__idx]);
         }

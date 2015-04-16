@@ -1,5 +1,5 @@
 drawWindow = function(context, editor) {
-    context.fillStyle = "#f0f0f0";
+    context.fillStyle = "#666666";
     context.lineWidth = 1;
     context.fillRect(0, 0, canvas.width, canvas.height);
     drawGrid(context, editor);
@@ -7,6 +7,8 @@ drawWindow = function(context, editor) {
 
 drawGrid = function(context, editor) {
     //console.log(editor.gridHeight);
+	
+	
     for (var x = 0.5; x < canvas.width; x += editor.gridHeight) {
         context.moveTo(x + editor.panPos.x % editor.gridHeight, 0);
         context.lineTo(x + editor.panPos.x % editor.gridHeight, canvas.height);
@@ -17,7 +19,7 @@ drawGrid = function(context, editor) {
         context.lineTo(canvas.width, y + editor.panPos.y % editor.gridHeight);
     }
 
-    context.strokeStyle = "#ddd";
+    context.strokeStyle = "#545454";
     context.stroke();
 }
 
@@ -63,7 +65,7 @@ RenderContext.prototype.render = function(renderContext, editor) {
         pt1 = segs[j][0];
         pt2 = segs[j][1];
         context.lineWidth = 5;
-        context.strokeStyle = "#00ff00";
+        context.strokeStyle = segs[j][2];
         context.beginPath();
         context.moveTo(pt1.pos.x + editor.panPos.x, pt1.pos.y + editor.panPos.y);
         context.lineTo(pt2.pos.x + editor.panPos.x, pt2.pos.y + editor.panPos.y);
