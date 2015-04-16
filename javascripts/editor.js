@@ -150,17 +150,16 @@ var Editor = function(vertices, segments) {
 
 Editor.prototype.scrollWheel = function(e){
 	if(e.wheelDeltaY > 0){
-		this.zoom += 0.1
+		this.zoom += 0.05;
 		if(this.zoom > 10){
 			this.zoom = 10;
 		}
 	} else {
-		this.zoom -= 0.1;
+		this.zoom -= 0.05;
 		if(this.zoom < 0.1){
 			this.zoom = 0.1;
 		}
 	}
-	log([this.zoom]);
 };
 
 Editor.prototype.keyDown = function(e) {
@@ -316,7 +315,7 @@ Editor.prototype.mouseClick = function(e) {
     if (e.shiftKey) {
         // if there wasn't a vertex picked in mousedown, create a new vertex
         if (!this.selected) {
-            this.vertices.push(new vertex(e.x - this.panPos.x, e.y - this.panPos.y));
+            this.vertices.push(new vertex(e.x / this.zoom - this.panPos.x, e.y / this.zoom - this.panPos.y));
         } else {
             // if there's a selected vertex, try picking for another vertex to make a segment
             linePt = this.pick({
@@ -495,8 +494,8 @@ Editor.prototype.mouseMove = function(e) {
         }
 
         if (this.panning) {
-            this.panPos.x = this.startPanPos.x - (this.dragStart.x - e.x);
-            this.panPos.y = this.startPanPos.y - (this.dragStart.y - e.y);
+            this.panPos.x = this.startPanPos.x - (this.dragStart.x - e.x) / this.zoom;
+            this.panPos.y = this.startPanPos.y - (this.dragStart.y - e.y) / this.zoom;
         }
     }
     return false;
@@ -540,7 +539,7 @@ Editor.prototype.pick = function(pos) {
     var panPos = this.panPos;
 	var ed = this;
     this.vertices.forEach(function(el, i, arr) {
-        if ((Math.sqrt(Math.pow(pos.x - ed.zoom * el.pos.x - ed.zoom * panPos.x, 2) + Math.pow(pos.y - ed.zoom * el.pos.y - ed.zoom * panPos.y, 2))) < (2 * el.r)) {
+        if ((Math.sqrt(Math.pow(pos.x - ed.zoom * el.pos.x - ed.zoom * panPos.x, 2) + Math.pow(pos.y - ed.zoom * el.pos.y - ed.zoom * panPos.y, 2))) < (2 * el.r) * ed.zoom) {
             picked = el;
             return;
         }
