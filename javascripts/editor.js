@@ -67,7 +67,7 @@ var Editor = function(vertices, segments) {
 	this.randomColor = false;
 	
 	// zoom logic
-	this.zoom = 1.0;
+	this.zoom = 1;
 	
 	// input function bindings
     this.mdown = this.mouseDown.bind(this);
@@ -284,15 +284,15 @@ Editor.prototype.mouseUp = function(e) {
             for (var i = 0; i < this.vertices.length; i++) {
                 var vtx = this.vertices[i];
                 var tl = {
-                    x: Math.min(this.dragStart.x, this.gsPos.x) - this.panPos.x,
-                    y: Math.min(this.dragStart.y, this.gsPos.y) - this.panPos.y
+                    x: Math.min(this.dragStart.x, this.gsPos.x) - this.panPos.x * this.zoom,
+                    y: Math.min(this.dragStart.y, this.gsPos.y) - this.panPos.y * this.zoom
                 };
                 var br = {
-                    x: Math.max(this.dragStart.x, this.gsPos.x) - this.panPos.x,
-                    y: Math.max(this.dragStart.y, this.gsPos.y) - this.panPos.y
+                    x: Math.max(this.dragStart.x, this.gsPos.x) - this.panPos.x * this.zoom,
+                    y: Math.max(this.dragStart.y, this.gsPos.y) - this.panPos.y * this.zoom
                 };
 
-                if (vtx.pos.x < br.x && vtx.pos.x > tl.x && vtx.pos.y > tl.y && vtx.pos.y < br.y) {
+                if (vtx.pos.x  * this.zoom < br.x && vtx.pos.x * this.zoom> tl.x && vtx.pos.y * this.zoom> tl.y && vtx.pos.y * this.zoom< br.y) {
                     if (this.selected == 0) {
                         this.selected = vtx;
                         this.selected.currentColor = this.selected.pickedColor;
@@ -402,8 +402,8 @@ Editor.prototype.mouseMove = function(e) {
         var oX = this.selected.pos.x;
         var oY = this.selected.pos.y;
 
-        var dx = -1 * (this.selected.pos.x - e.x + this.panPos.x);
-        var dy = -1 * (this.selected.pos.y - e.y + this.panPos.y);
+        var dx = -1 * (this.selected.pos.x - e.x / this.zoom + this.panPos.x);
+        var dy = -1 * (this.selected.pos.y - e.y / this.zoom + this.panPos.y);
 
         this.selected.pos.x = e.x / this.zoom - this.panPos.x;
         this.selected.pos.y = e.y / this.zoom - this.panPos.y;
