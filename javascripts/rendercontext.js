@@ -9,14 +9,14 @@ drawGrid = function(context, editor) {
     //console.log(editor.gridHeight);
 	
 	
-    for (var x = 0.5; x < canvas.width; x += editor.gridHeight) {
-        context.moveTo(x + editor.panPos.x % editor.gridHeight, 0);
-        context.lineTo(x + editor.panPos.x % editor.gridHeight, canvas.height);
+    for (var x = 0.5; x < canvas.width; x += (editor.zoom * editor.gridHeight)) {
+        context.moveTo(x + editor.zoom * (editor.panPos.x % editor.gridHeight), 0);
+        context.lineTo(x + editor.zoom * (editor.panPos.x % editor.gridHeight), canvas.height);
     }
 
-    for (var y = 0.5; y < canvas.height; y += editor.gridHeight) {
-        context.moveTo(0, y + editor.panPos.y % editor.gridHeight);
-        context.lineTo(canvas.width, y + editor.panPos.y % editor.gridHeight);
+    for (var y = 0.5; y < canvas.height + editor.gridHeight; y += (editor.zoom * editor.gridHeight)) {
+        context.moveTo(0, y + editor.zoom * (editor.panPos.y % editor.gridHeight));
+        context.lineTo(canvas.width, y + editor.zoom * (editor.panPos.y % editor.gridHeight));
     }
 
     context.strokeStyle = "#545454";
@@ -56,7 +56,7 @@ RenderContext.prototype.render = function(renderContext, editor) {
         context.lineWidth = 2;
         context.strokeStyle = verts[i].currentColor;
         context.beginPath();
-        context.arc(verts[i].pos.x + editor.panPos.x, verts[i].pos.y + editor.panPos.y, verts[i].r, 0, Math.PI * 2, true);
+        context.arc(editor.zoom *(verts[i].pos.x + editor.panPos.x), editor.zoom * (verts[i].pos.y + editor.panPos.y), editor.zoom * verts[i].r, 0, Math.PI * 2, true);
         context.stroke();
     }
 
@@ -64,11 +64,11 @@ RenderContext.prototype.render = function(renderContext, editor) {
     for (var j = 0; j < segs.length; j++) {
         pt1 = segs[j][0];
         pt2 = segs[j][1];
-        context.lineWidth = 5;
+        context.lineWidth = editor.zoom * 5;
         context.strokeStyle = segs[j][2];
         context.beginPath();
-        context.moveTo(pt1.pos.x + editor.panPos.x, pt1.pos.y + editor.panPos.y);
-        context.lineTo(pt2.pos.x + editor.panPos.x, pt2.pos.y + editor.panPos.y);
+        context.moveTo(editor.zoom *(pt1.pos.x + editor.panPos.x), editor.zoom * (pt1.pos.y + editor.panPos.y));
+        context.lineTo(editor.zoom * (pt2.pos.x + editor.panPos.x), editor.zoom * (pt2.pos.y + editor.panPos.y));
         context.stroke();
     }
 

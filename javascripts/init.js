@@ -30,6 +30,7 @@ window.onload = function() {
     canvas.onmousedown = editor.mdown;
     canvas.onmouseup = editor.mup;
     canvas.onmousemove = editor.mmove;
+	document.onmousewheel = editor.mwheel;
 
     renderContext = new RenderContext(context, vertices, segments, editor);
 
