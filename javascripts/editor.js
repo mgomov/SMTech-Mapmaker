@@ -67,7 +67,7 @@ var Editor = function(vertices, segments) {
 	this.randomColor = false;
 	
 	// zoom logic
-	this.zoom = 0.5;
+	this.zoom = 1.0;
 	
 	// input function bindings
     this.mdown = this.mouseDown.bind(this);
