@@ -10,11 +10,7 @@ var Editor = function(vertices, segments) {
     this.position.y = 0;
 
     this.mouseIsDown = false;
-    this.mdown = this.mouseDown.bind(this);
-    this.mup = this.mouseUp.bind(this);
-    this.mmove = this.mouseMove.bind(this);
-    this.keydown = this.keyDown.bind(this);
-
+	
     // dragging logic
     this.dragging = false;
     this.dragTolerance = 1;
@@ -70,7 +66,16 @@ var Editor = function(vertices, segments) {
 	this.segColor = "#00ff00";
 	this.randomColor = false;
 	
-
+	// zoom logic
+	this.zoom = 0.5;
+	
+	// input function bindings
+    this.mdown = this.mouseDown.bind(this);
+    this.mup = this.mouseUp.bind(this);
+    this.mmove = this.mouseMove.bind(this);
+    this.keydown = this.keyDown.bind(this);
+	this.mwheel = this.scrollWheel.bind(this);
+	
     var ed = this;
     // UI hooks
     $("#snap-to-grid-x").click(function() {
@@ -125,7 +130,7 @@ var Editor = function(vertices, segments) {
             var segs = ed.segments;
             for (var i = 0; i < segs.length; i++) {
 			log([segs[i][2]], segs[i][2].slice(1, 6));
-                csv += segs[i][0].pos.x + "," + segs[i][0].pos.y + "," + segs[i][1].pos.x + "," + segs[i][1].pos.y + "," + parseInt(segs[i][2].replace("#", ""), 16) + (i == segs.length - 1 ? "," : ",") /* broken loader, broken export, fix loader please*/;
+                csv += segs[i][0].pos.x + "," + segs[i][0].pos.y + "," + segs[i][1].pos.x + "," + segs[i][1].pos.y + "," + parseInt(segs[i][2].replace("#", ""), 16) + (i == segs.length - 1 ? "," : ",") /* broken loader, broken export, fix loader please */;
             }
             console.log(csv);
             $("#export-window").val(csv);
@@ -133,6 +138,7 @@ var Editor = function(vertices, segments) {
         }
     });
 	
+	// segment colorpicker things
 	$(function(){
 		$('.edcolorpicker').colorpicker();
 	});
@@ -142,7 +148,23 @@ var Editor = function(vertices, segments) {
 	});
 };
 
+Editor.prototype.scrollWheel = function(e){
+	if(e.wheelDeltaY > 0){
+		this.zoom += 0.1
+		if(this.zoom > 10){
+			this.zoom = 10;
+		}
+	} else {
+		this.zoom -= 0.1;
+		if(this.zoom < 0.1){
+			this.zoom = 0.1;
+		}
+	}
+	log([this.zoom]);
+};
+
 Editor.prototype.keyDown = function(e) {
+	//e.preventDefault();
     switch (e.keyCode) {
         case this.keyEnum.DELETE:
             // delete the selection
@@ -237,6 +259,7 @@ Editor.prototype.keyDown = function(e) {
 }
 
 Editor.prototype.mouseDown = function(e) {
+	e.preventDefault();
     this.dragStart.x = e.x;
     this.dragStart.y = e.y;
 
@@ -244,6 +267,7 @@ Editor.prototype.mouseDown = function(e) {
 };
 
 Editor.prototype.mouseUp = function(e) {
+	e.preventDefault();
     // if the user isn't dragging when they release the button, assume that it's a click
     if (!this.dragging) {
         this.mouseClick(e);
@@ -372,17 +396,18 @@ Editor.prototype.mouseClick = function(e) {
 };
 
 Editor.prototype.mouseMove = function(e) {
+	e.preventDefault();
     // update position of a vertex being dragged
     if (this.dragging && this.selected) {
         var oX = this.selected.pos.x;
-        var oY = this.selected.pos.y
+        var oY = this.selected.pos.y;
 
         var dx = -1 * (this.selected.pos.x - e.x + this.panPos.x);
         var dy = -1 * (this.selected.pos.y - e.y + this.panPos.y);
 
-        this.selected.pos.x = e.x - this.panPos.x;
-        this.selected.pos.y = e.y - this.panPos.y;
-
+        this.selected.pos.x = e.x / this.zoom - this.panPos.x;
+        this.selected.pos.y = e.y / this.zoom - this.panPos.y;
+		
         // TODO need to refactor negative coord case
         if (this.snapToGridX) {
             var xDist = this.selected.pos.x % this.gridHeight;
@@ -495,7 +520,7 @@ Editor.prototype.createCopy = function(toCopy, cpySegs) {
     // verts list, create a new seg with the copied verts as endpoints
     for (var i = 0; i < cpySegs.length; i++) {
         if (cpySegs[i][0].__idx != undefined && cpySegs[i][1].__idx != undefined) {
-            copy.segs.push([copy.verts[cpySegs[i][0].__idx], copy.verts[cpySegs[i][1].__idx]], cpySegs[i][2]);
+            copy.segs.push([copy.verts[cpySegs[i][0].__idx], copy.verts[cpySegs[i][1].__idx], cpySegs[i][2]]);
             copy.verts[cpySegs[i][0].__idx].connected.push(copy.verts[cpySegs[i][1].__idx]);
             copy.verts[cpySegs[i][1].__idx].connected.push(copy.verts[cpySegs[i][0].__idx]);
         }
@@ -505,7 +530,7 @@ Editor.prototype.createCopy = function(toCopy, cpySegs) {
         delete toCopy[i]['__idx'];
         delete copy.verts[i]['__idx'];
     }
-
+	//log(['orig', toCopy, 'origSegs', cpySegs, 'copied', copy.verts, 'segs', copy.segs]);
     return copy;
 }
 
@@ -513,8 +538,9 @@ Editor.prototype.createCopy = function(toCopy, cpySegs) {
 Editor.prototype.pick = function(pos) {
     var picked = false;
     var panPos = this.panPos;
+	var ed = this;
     this.vertices.forEach(function(el, i, arr) {
-        if (Math.sqrt(Math.pow(pos.x - el.pos.x - panPos.x, 2) + Math.pow(pos.y - el.pos.y - panPos.y, 2)) < 2 * el.r) {
+        if ((Math.sqrt(Math.pow(pos.x - ed.zoom * el.pos.x - ed.zoom * panPos.x, 2) + Math.pow(pos.y - ed.zoom * el.pos.y - ed.zoom * panPos.y, 2))) < (2 * el.r)) {
             picked = el;
             return;
         }
