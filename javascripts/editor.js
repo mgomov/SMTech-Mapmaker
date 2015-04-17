@@ -115,12 +115,33 @@ var Editor = function(vertices, segments) {
     });
 
     $("#import").click(function(e) {
-        csv = "";
-        var segs = ed.segments;
-        for (var i = 0; i < segs.length; i++) {
-            csv += segs[i][0].pos.x + "," + segs[i][0].pos.y + "," + segs[i][1].pos.x + "," + segs[i][1].pos.y + "\n"
-        }
-        console.log(csv);
+		log(['importing']);
+        csv = $("#import-window").val();
+		log([csv]);
+		
+		// clear
+		ed.vertices.length = 0;
+		ed.segments.length = 0;
+		
+		tokens = csv.split(',');
+		log([tokens]);
+		
+		// broken comma means iterate to length - 1... blame the main program's loader for this one
+		for(var i = 0; i < tokens.length - 1; i+= 5){
+			var v1x = parseInt(tokens[i], 10);
+			var v1y = parseInt(tokens[i + 1], 10);
+			var v2x = parseInt(tokens[i + 2], 10);
+			var v2y = parseInt(tokens[i + 3], 10);
+			var color = '#' + parseInt(tokens[i + 4], 10).toString(16);
+			var v1 = new vertex(v1x, v1y);
+			var v2 = new vertex(v2x, v2y);
+			v1.connected.push(v2);
+			v2.connected.push(v1);
+			ed.vertices.push(v1);
+			ed.vertices.push(v2);
+			console.log([v1, v2, color]);
+			ed.segments.push([v1, v2, color]);
+		}
     });
 
     this.exportType = "csv";
@@ -138,6 +159,12 @@ var Editor = function(vertices, segments) {
         }
     });
 	
+	$("#do-bsp").click(function(e){
+		var ebsp = new EasyBSP(ed.vertices, ed.segments);
+		log([ebsp]);
+		ebsp.partition();
+	});
+	
 	// segment colorpicker things
 	$(function(){
 		$('.edcolorpicker').colorpicker();
@@ -146,6 +173,8 @@ var Editor = function(vertices, segments) {
 	$('.edcolorpicker').colorpicker().on('changeColor.colorpicker', function(event){
 		ed.segColor = event.color.toHex();
 	});
+	
+	
 };
 
 Editor.prototype.scrollWheel = function(e){
@@ -211,7 +240,6 @@ Editor.prototype.keyDown = function(e) {
                 // feed verts and segs into createCopy, which throws a 'base copy' 
                 var copy = this.createCopy(toCopy, this.segments);
                 this.copyBuffer.buffer.push(copy);
-
             }
             break;
         case this.keyEnum.PASTE:
@@ -313,6 +341,7 @@ Editor.prototype.mouseUp = function(e) {
 Editor.prototype.mouseClick = function(e) {
     // shift is the main modifier in the program
     if (e.shiftKey) {
+		log(['shifty', this.selected]);
         // if there wasn't a vertex picked in mousedown, create a new vertex
         if (!this.selected) {
             this.vertices.push(new vertex(e.x / this.zoom - this.panPos.x, e.y / this.zoom - this.panPos.y));
@@ -341,7 +370,11 @@ Editor.prototype.mouseClick = function(e) {
                     }
 
                 }
-            }
+            } else {
+				this.selected.currentColor = this.selected.color;
+				this.selected = false;
+				this.vertices.push(new vertex(e.x / this.zoom - this.panPos.x, e.y / this.zoom - this.panPos.y));
+			}
         }
     } else {
         // reset the color of the last-picked vertex, since it's being unselected

@@ -6,9 +6,7 @@ drawWindow = function(context, editor) {
 };
 
 drawGrid = function(context, editor) {
-    //console.log(editor.gridHeight);
-	
-	
+	context.beginPath();
     for (var x = 0.5; x < canvas.width; x += (editor.zoom * editor.gridHeight)) {
         context.moveTo(x + editor.zoom * (editor.panPos.x % editor.gridHeight), 0);
         context.lineTo(x + editor.zoom * (editor.panPos.x % editor.gridHeight), canvas.height);

@@ -19,6 +19,10 @@ window.onload = function() {
             vertices.push(new vertex(i * 100, j * 100));
         }
     }
+	
+	for(var i = 0; i < 20; i++){
+		segments.push([vertices[Math.floor(Math.random()*vertices.length)], vertices[Math.floor(Math.random()*vertices.length)], "#00ff00"]);
+	}
 
     var mouseIsDown = false;
     var dragOffset = {};
