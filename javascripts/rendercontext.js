@@ -6,7 +6,7 @@ drawWindow = function(context, editor) {
 };
 
 drawGrid = function(context, editor) {
-	context.beginPath();
+    context.beginPath();
     for (var x = 0.5; x < canvas.width; x += (editor.zoom * editor.gridHeight)) {
         context.moveTo(x + editor.zoom * (editor.panPos.x % editor.gridHeight), 0);
         context.lineTo(x + editor.zoom * (editor.panPos.x % editor.gridHeight), canvas.height);
@@ -54,7 +54,7 @@ RenderContext.prototype.render = function(renderContext, editor) {
         context.lineWidth = 2;
         context.strokeStyle = verts[i].currentColor;
         context.beginPath();
-        context.arc(editor.zoom *(verts[i].pos.x + editor.panPos.x), editor.zoom * (verts[i].pos.y + editor.panPos.y), editor.zoom * verts[i].r, 0, Math.PI * 2, true);
+        context.arc(editor.zoom * (verts[i].pos.x + editor.panPos.x), editor.zoom * (verts[i].pos.y + editor.panPos.y), editor.zoom * verts[i].r, 0, Math.PI * 2, true);
         context.stroke();
     }
 
@@ -65,7 +65,7 @@ RenderContext.prototype.render = function(renderContext, editor) {
         context.lineWidth = editor.zoom * 5;
         context.strokeStyle = segs[j][2];
         context.beginPath();
-        context.moveTo(editor.zoom *(pt1.pos.x + editor.panPos.x), editor.zoom * (pt1.pos.y + editor.panPos.y));
+        context.moveTo(editor.zoom * (pt1.pos.x + editor.panPos.x), editor.zoom * (pt1.pos.y + editor.panPos.y));
         context.lineTo(editor.zoom * (pt2.pos.x + editor.panPos.x), editor.zoom * (pt2.pos.y + editor.panPos.y));
         context.stroke();
     }

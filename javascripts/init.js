@@ -19,10 +19,10 @@ window.onload = function() {
             vertices.push(new vertex(i * 100, j * 100));
         }
     }
-	
-	for(var i = 0; i < 20; i++){
-		segments.push([vertices[Math.floor(Math.random()*vertices.length)], vertices[Math.floor(Math.random()*vertices.length)], "#00ff00"]);
-	}
+
+    for (var i = 0; i < 20; i++) {
+        segments.push([vertices[Math.floor(Math.random() * vertices.length)], vertices[Math.floor(Math.random() * vertices.length)], "#00ff00"]);
+    }
 
     var mouseIsDown = false;
     var dragOffset = {};
@@ -34,11 +34,23 @@ window.onload = function() {
     canvas.onmousedown = editor.mdown;
     canvas.onmouseup = editor.mup;
     canvas.onmousemove = editor.mmove;
-	document.onmousewheel = editor.mwheel;
+    document.onmousewheel = editor.mwheel;
 
     renderContext = new RenderContext(context, vertices, segments, editor);
 
     window.requestAnimationFrame(function(delta) {
         renderContext.render(renderContext, editor);
+    });
+
+    $('.dropdown-persist').on('click', function(event) {
+        log([this]);
+        $(this).parent().toggleClass('open');
+    });
+
+    $('body').on('click', function(e) {
+        if (!$('.dropdown-persist').is(e.target) && $('.dropdown-persist').has(e.target).length === 0 && $('.open').has(e.target).length === 0) {
+            // hacky but works
+            $('li').removeClass('open');
+        }
     });
 }

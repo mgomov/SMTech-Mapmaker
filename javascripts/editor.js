@@ -10,7 +10,7 @@ var Editor = function(vertices, segments) {
     this.position.y = 0;
 
     this.mouseIsDown = false;
-	
+
     // dragging logic
     this.dragging = false;
     this.dragTolerance = 1;
@@ -32,12 +32,12 @@ var Editor = function(vertices, segments) {
     // DELETE = del
     // COPY = ctrl + 'c'
     // PASTE = ctrl + 'v'
-	// MENU = 'h'
+    // MENU = 'h'
     this.keyEnum = Object.freeze({
         DELETE: 46,
         COPY: 67,
         PASTE: 86,
-		MENU:72
+        MENU: 77
     });
 
     // copy buffer to allow copying of various constructs
@@ -62,25 +62,28 @@ var Editor = function(vertices, segments) {
     this.snapToGridX = false;
     this.snapToGridY = false;
 
-	// current segment color to apply to new segments
-	this.segColor = "#00ff00";
-	this.randomColor = false;
-	
-	// zoom logic
-	this.zoom = 1;
-	
-	// input function bindings
+    // current segment color to apply to new segments
+    this.segColor = "#00ff00";
+    this.randomColor = false;
+
+    // zoom logic
+    this.zoom = 1;
+
+    // input function bindings
     this.mdown = this.mouseDown.bind(this);
     this.mup = this.mouseUp.bind(this);
     this.mmove = this.mouseMove.bind(this);
     this.keydown = this.keyDown.bind(this);
-	this.mwheel = this.scrollWheel.bind(this);
-	
+    this.mwheel = this.scrollWheel.bind(this);
+
     var ed = this;
+
+    // convenience, select the seglinked vertex
+    this.selectLinked = false;
+
     // UI hooks
     $("#snap-to-grid-x").click(function() {
         var $this = $(this);
-        // $this will contain a reference to the checkbox   
         if ($this.is(':checked')) {
             ed.snapToGridX = true;
         } else {
@@ -88,60 +91,91 @@ var Editor = function(vertices, segments) {
         }
     });
 
+    $("#select-linked").click(function() {
+        var $this = $(this);
+        if ($this.is(':checked')) {
+            ed.selectLinked = true;
+        } else {
+            ed.selectLinked = false;
+        }
+    });
+
     $("#snap-to-grid-y").click(function() {
         var $this = $(this);
-        log([this]);
-
         if ($this.is(':checked')) {
             ed.snapToGridY = true;
         } else {
             ed.snapToGridY = false;
         }
     });
-	
-	$("#random-color").click(function() {
+
+    $("#random-color").click(function() {
         var $this = $(this);
-        // $this will contain a reference to the checkbox   
         if ($this.is(':checked')) {
             ed.randomColor = true;
+            $("#color-input").prop('disabled', true);
         } else {
             ed.randomColor = false;
+            $("#color-input").prop('disabled', false);
         }
     });
 
     $("#grid-size-go").click(function(e) {
-        console.log(parseInt(ed.gridHeight));
         ed.gridHeight = parseInt($("#grid-size").val());
     });
 
+    $("#import-toggle").click(function(e) {
+        if ($('#import-div').is(':visible')) {
+            $("#import-div").hide();
+        } else {
+            $("#import-div").show();
+        }
+    });
+
+    $("#export-toggle").click(function(e) {
+        if ($('#export-div').is(':visible')) {
+            $("#export-div").hide();
+        } else {
+            $("#export-div").show();
+        }
+    });
+
+    $("#help-toggle").click(function(e) {
+        if ($('#help-div').is(':visible')) {
+            $("#help-div").hide();
+        } else {
+            $("#help-div").show();
+        }
+    });
+
     $("#import").click(function(e) {
-		log(['importing']);
+        log(['importing']);
         csv = $("#import-window").val();
-		log([csv]);
-		
-		// clear
-		ed.vertices.length = 0;
-		ed.segments.length = 0;
-		
-		tokens = csv.split(',');
-		log([tokens]);
-		
-		// broken comma means iterate to length - 1... blame the main program's loader for this one
-		for(var i = 0; i < tokens.length - 1; i+= 5){
-			var v1x = parseInt(tokens[i], 10);
-			var v1y = parseInt(tokens[i + 1], 10);
-			var v2x = parseInt(tokens[i + 2], 10);
-			var v2y = parseInt(tokens[i + 3], 10);
-			var color = '#' + parseInt(tokens[i + 4], 10).toString(16);
-			var v1 = new vertex(v1x, v1y);
-			var v2 = new vertex(v2x, v2y);
-			v1.connected.push(v2);
-			v2.connected.push(v1);
-			ed.vertices.push(v1);
-			ed.vertices.push(v2);
-			console.log([v1, v2, color]);
-			ed.segments.push([v1, v2, color]);
-		}
+        log([csv]);
+
+        // clear
+        ed.vertices.length = 0;
+        ed.segments.length = 0;
+
+        tokens = csv.split(',');
+        log([tokens]);
+
+        // broken comma means iterate to length - 1... blame the main program's loader for this one
+        for (var i = 0; i < tokens.length - 1; i += 5) {
+            var v1x = parseInt(tokens[i], 10);
+            var v1y = parseInt(tokens[i + 1], 10);
+            var v2x = parseInt(tokens[i + 2], 10);
+            var v2y = parseInt(tokens[i + 3], 10);
+            var color = '#' + parseInt(tokens[i + 4], 10).toString(16);
+            var v1 = new vertex(v1x, v1y);
+            var v2 = new vertex(v2x, v2y);
+            v1.connected.push(v2);
+            v2.connected.push(v1);
+            ed.vertices.push(v1);
+            ed.vertices.push(v2);
+            console.log([v1, v2, color]);
+            ed.segments.push([v1, v2, color]);
+        }
     });
 
     this.exportType = "csv";
@@ -150,49 +184,49 @@ var Editor = function(vertices, segments) {
             csv = "";
             var segs = ed.segments;
             for (var i = 0; i < segs.length; i++) {
-			log([segs[i][2]], segs[i][2].slice(1, 6));
-                csv += segs[i][0].pos.x + "," + segs[i][0].pos.y + "," + segs[i][1].pos.x + "," + segs[i][1].pos.y + "," + parseInt(segs[i][2].replace("#", ""), 16) + (i == segs.length - 1 ? "," : ",") /* broken loader, broken export, fix loader please */;
+                log([segs[i][2]], segs[i][2].slice(1, 6));
+                csv += segs[i][0].pos.x + "," + segs[i][0].pos.y + "," + segs[i][1].pos.x + "," + segs[i][1].pos.y + "," + parseInt(segs[i][2].replace("#", ""), 16) + (i == segs.length - 1 ? "," : ",") /* broken loader, broken export, fix loader please */ ;
             }
             console.log(csv);
             $("#export-window").val(csv);
             console.log($("#export-window").val());
         }
     });
-	
-	$("#do-bsp").click(function(e){
-		ed.ebsp = new EasyBSP(ed.vertices, ed.segments);
-		log([ed.ebsp]);
-		ed.ebsp.partition();
-	});
-	
-	// segment colorpicker things
-	$(function(){
-		$('.edcolorpicker').colorpicker();
-	});
-	
-	$('.edcolorpicker').colorpicker().on('changeColor.colorpicker', function(event){
-		ed.segColor = event.color.toHex();
-	});
-	
-	
+
+    $("#do-bsp").click(function(e) {
+        ed.ebsp = new EasyBSP(ed.vertices, ed.segments);
+        log([ed.ebsp]);
+        ed.ebsp.partition();
+    });
+
+    // segment colorpicker things
+    $(function() {
+        $('.edcolorpicker').colorpicker();
+    });
+
+    $('.edcolorpicker').colorpicker().on('changeColor.colorpicker', function(event) {
+        ed.segColor = event.color.toHex();
+    });
+
+
 };
 
-Editor.prototype.scrollWheel = function(e){
-	if(e.wheelDeltaY > 0){
-		this.zoom += 0.05;
-		if(this.zoom > 10){
-			this.zoom = 10;
-		}
-	} else {
-		this.zoom -= 0.05;
-		if(this.zoom < 0.1){
-			this.zoom = 0.1;
-		}
-	}
+Editor.prototype.scrollWheel = function(e) {
+    if (e.wheelDeltaY > 0) {
+        this.zoom += 0.05;
+        if (this.zoom > 10) {
+            this.zoom = 10;
+        }
+    } else {
+        this.zoom -= 0.05;
+        if (this.zoom < 0.1) {
+            this.zoom = 0.1;
+        }
+    }
 };
 
 Editor.prototype.keyDown = function(e) {
-	//e.preventDefault();
+    //e.preventDefault();
     switch (e.keyCode) {
         case this.keyEnum.DELETE:
             // delete the selection
@@ -279,14 +313,14 @@ Editor.prototype.keyDown = function(e) {
 
             }
             break;
-		case this.keyEnum.MENU:
-			$("#menu").toggle();
-			break;
+        case this.keyEnum.MENU:
+            $("#menu").toggle();
+            break;
     }
 }
 
 Editor.prototype.mouseDown = function(e) {
-	e.preventDefault();
+    e.preventDefault();
     this.dragStart.x = e.x;
     this.dragStart.y = e.y;
 
@@ -294,7 +328,7 @@ Editor.prototype.mouseDown = function(e) {
 };
 
 Editor.prototype.mouseUp = function(e) {
-	e.preventDefault();
+    e.preventDefault();
     // if the user isn't dragging when they release the button, assume that it's a click
     if (!this.dragging) {
         this.mouseClick(e);
@@ -319,7 +353,7 @@ Editor.prototype.mouseUp = function(e) {
                     y: Math.max(this.dragStart.y, this.gsPos.y) - this.panPos.y * this.zoom
                 };
 
-                if (vtx.pos.x  * this.zoom < br.x && vtx.pos.x * this.zoom> tl.x && vtx.pos.y * this.zoom> tl.y && vtx.pos.y * this.zoom< br.y) {
+                if (vtx.pos.x * this.zoom < br.x && vtx.pos.x * this.zoom > tl.x && vtx.pos.y * this.zoom > tl.y && vtx.pos.y * this.zoom < br.y) {
                     if (this.selected == 0) {
                         this.selected = vtx;
                         this.selected.currentColor = this.selected.pickedColor;
@@ -338,7 +372,7 @@ Editor.prototype.mouseUp = function(e) {
     this.mouseIsDown = false;
 };
 
-Editor.prototype.mouseClick = function(e) {	
+Editor.prototype.mouseClick = function(e) {
     // shift is the main modifier in the program
     if (e.shiftKey) {
         // if there wasn't a vertex picked in mousedown, create a new vertex
@@ -352,13 +386,19 @@ Editor.prototype.mouseClick = function(e) {
             });
             if (linePt) {
                 if (this.selected.connected.indexOf(linePt) == -1) {
+                    if (this.randomColor) {
+                        this.segColor = '#' + Math.floor(Math.random() * 16777215).toString(16); // js magic, http://www.paulirish.com/2009/random-hex-color-code-snippets/
+                        $(".edcolorpicker input").val(this.segColor);
+                    }
                     this.segments.push([this.selected, linePt, this.segColor]);
                     this.selected.connected.push(linePt);
                     linePt.connected.push(this.selected);
-					if(this.randomColor){
-						this.segColor = '#'+Math.floor(Math.random()*16777215).toString(16); // js magic, http://www.paulirish.com/2009/random-hex-color-code-snippets/
-						$(".edcolorpicker input").val(this.segColor);
-					}
+
+                    if (this.selectLinked) {
+                        this.selected.currentColor = this.selected.color;
+                        this.selected = linePt;
+                        linePt.currentColor = linePt.pickedColor;
+                    }
                 } else {
                     this.selected.connected.splice(this.selected.connected.indexOf(linePt), 1);
                     linePt.connected.splice(linePt.connected.indexOf(this.selected), 1);
@@ -367,20 +407,23 @@ Editor.prototype.mouseClick = function(e) {
                             this.segments.splice(i, 1);
                         }
                     }
-
                 }
+
+
             } else {
-				this.selected.currentColor = this.selected.color;
-				this.selected = false;
-				this.vertices.push(new vertex(e.x / this.zoom - this.panPos.x, e.y / this.zoom - this.panPos.y));
-			}
+                this.selected.currentColor = this.selected.color;
+                this.selected = false;
+                this.vertices.push(new vertex(e.x / this.zoom - this.panPos.x, e.y / this.zoom - this.panPos.y));
+            }
         }
-    } else if(e.altKey){
-		log(['alted', this.ebsp]);
-		
-		this.ebsp.traverse({x:e.x / this.zoom - this.panPos.x, y: e.y / this.zoom - this.panPos.y});
-		
-	} else {
+    } else if (e.altKey) {
+        log(['alted', this.ebsp]);
+        this.ebsp.traverse({
+            x: e.x / this.zoom - this.panPos.x,
+            y: e.y / this.zoom - this.panPos.y
+        });
+        this.vertices.push(new vertex(e.x / this.zoom - this.panPos.x, e.y / this.zoom - this.panPos.y));
+    } else {
         // reset the color of the last-picked vertex, since it's being unselected
         if (this.selected) {
             this.selected.currentColor = this.selected.color;
@@ -432,7 +475,7 @@ Editor.prototype.mouseClick = function(e) {
 };
 
 Editor.prototype.mouseMove = function(e) {
-	e.preventDefault();
+    e.preventDefault();
     // update position of a vertex being dragged
     if (this.dragging && this.selected) {
         var oX = this.selected.pos.x;
@@ -443,7 +486,7 @@ Editor.prototype.mouseMove = function(e) {
 
         this.selected.pos.x = e.x / this.zoom - this.panPos.x;
         this.selected.pos.y = e.y / this.zoom - this.panPos.y;
-		
+
         // TODO need to refactor negative coord case
         if (this.snapToGridX) {
             var xDist = this.selected.pos.x % this.gridHeight;
@@ -566,7 +609,7 @@ Editor.prototype.createCopy = function(toCopy, cpySegs) {
         delete toCopy[i]['__idx'];
         delete copy.verts[i]['__idx'];
     }
-	//log(['orig', toCopy, 'origSegs', cpySegs, 'copied', copy.verts, 'segs', copy.segs]);
+    //log(['orig', toCopy, 'origSegs', cpySegs, 'copied', copy.verts, 'segs', copy.segs]);
     return copy;
 }
 
@@ -574,7 +617,7 @@ Editor.prototype.createCopy = function(toCopy, cpySegs) {
 Editor.prototype.pick = function(pos) {
     var picked = false;
     var panPos = this.panPos;
-	var ed = this;
+    var ed = this;
     this.vertices.forEach(function(el, i, arr) {
         if ((Math.sqrt(Math.pow(pos.x - ed.zoom * el.pos.x - ed.zoom * panPos.x, 2) + Math.pow(pos.y - ed.zoom * el.pos.y - ed.zoom * panPos.y, 2))) < (2 * el.r) * ed.zoom) {
             picked = el;

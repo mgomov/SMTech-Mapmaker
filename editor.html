@@ -1,96 +1,149 @@
 <html>
+
 <canvas id="canvas" style='position:absolute;top:0px;left:0px;'></canvas>
-<div class='col-md-3' id="menu" style="position:absolute;top:0px;right:0px;">
-    <div id='menu-drag'>
-        Menu
-    </div>
-    <div>
-        <nav class="navbar navbar-default">
+
+<div class='col-md-4' id='menu' style="position:absolute;top:0px;right:0px;">
+    <div class="row">
+        <nav class="navbar navbar-inverse">
             <div class="container-fluid">
+                <!-- Brand and toggle get grouped for better mobile display -->
                 <div class="navbar-header">
-                    <a class="navbar-brand" href="#">Copy Buffer</a>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="#">SMEd</a>
                 </div>
+
+                <!-- Collect the nav links, forms, and other content for toggling -->
                 <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                     <ul class="nav navbar-nav">
                         <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Options<span class="caret"></span></a>
+                            <a href="#" class="dropdown-toggle dropdown-persist" role="button" aria-expanded="false">Options<span class="caret"></span></a>
                             <ul class="dropdown-menu" role="menu">
-                                <li><a href="#">Clear</a></li>
-                                <li><a href="#">Export</a></li>
-                                <li><a href="#">Import</a></li>
+                                <li>
+                                    <div class="input-group">
+                                        <span class="input-group-addon">
+											<input type="checkbox" id="select-linked">
+										</span>
+                                        <input disabled type="text" class="form-control" value="Select linked">
+                                    </div>
+                                </li>
+
+                                <li class="divider"></li>
+
+                                <li>
+                                    <div class="input-group">
+                                        <span class="input-group-addon">
+											<input type="checkbox" id="snap-to-grid-x">
+										</span>
+                                        <input disabled type="text" class="form-control" value="Snap-to-grid X">
+                                    </div>
+                                </li>
+
+                                <li>
+                                    <div class="input-group">
+                                        <span class="input-group-addon">
+											<input type="checkbox" id="snap-to-grid-y">
+										</span>
+                                        <input disabled type="text" class="form-control" value="Snap-to-grid Y">
+                                    </div>
+                                </li>
+
+                                <li class="divider"></li>
+
+                                <li>
+                                    <div class="input-group">
+                                        <span class="input-group-addon" id="basic-addon2">Grid (px)</span>
+                                        <input type="number" class="form-control" id="grid-size" value="50">
+
+                                    </div>
+                                    <div class="input-group">
+                                        <span class="input-group-addon" id="grid-size-go"><a href="#"	>Apply</a></span>
+                                    </div>
+                                </li>
+
+                                <li class="divider"></li>
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+										<input type="checkbox" id="random-color">
+									</span>
+                                    <input disabled type="text" class="form-control" value="Random Color">
+                                </div>
+                                <div class="">
+                                    <div class="input-group colorpicker-component edcolorpicker ">
+                                        <span class="input-group-addon"><i></i></span>
+                                        <input id="color-input" type="text" value="#00ff00" class="form-control" />
+                                    </div>
+                                </div>
                             </ul>
                         </li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle dropdown-persist" role="button" aria-expanded="false">Experimental<span class="caret"></span></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <input type="button" id="do-bsp" value="EasyBSP"></input>
+                            </ul>
+                        </li>
+                        <li class="divider"></li>
+                        <li><a href="#" id="import-toggle">Import</a></li>
+                        <li><a href="#" id="export-toggle">Export</a></li>
+                        <li class="divider"></li>
+                        <li><a href="#" id="help-toggle">Help</a></li>
                     </ul>
                 </div>
+                <!-- /.navbar-collapse -->
             </div>
+            <!-- /.container-fluid -->
         </nav>
     </div>
-    <div id=''>
-        <ul class="list-group">
-            <li class="list-group-item">Grid options</li>
-            <div class="">
-                <div class="input-group">
-                    <span class="input-group-addon" id="basic-addon2">Grid Size (px)</span>
-                    <input type="number" class="form-control" id="grid-size" value="50">
-                    <span class="input-group-addon" id="basic-addon2"><a href="#" id="grid-size-go">Apply</a></span>
-                </div>
-                <div class="input-group">
-                    <span class="input-group-addon">
-						<input type="checkbox" id="snap-to-grid-x">
-					</span>
-                    <input disabled type="text" class="form-control" value="Snap-to-grid X">
-                </div>
-                <div class="input-group">
-                    <span class="input-group-addon">
-						<input type="checkbox" id="snap-to-grid-y">
-					</span>
-                    <input disabled type="text" class="form-control" value="Snap-to-grid Y">
-                </div>
+    <div class="row" id="export-div" style="display:none;">
+        <li class="list-group-item">Export</li>
+        <li class="list-group-item">
+            <input disabled type="text" value="" style="width:100%;" id="export-window">
+            <div class="input-group">
+                <span class="input-group-btn">
+					<button class="btn btn-default" type="button" id="export">Go!</button>
+				</span>
             </div>
-            <li class="list-group-item">Export</li>
-            <li class="list-group-item">
-                <input disabled type="text" value="" style="width:100%;" id="export-window">
-                <div class="input-group">
-                    <div class="input-group-btn">
-                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">Format<span class="caret"></span></button>
-                        <ul class="dropdown-menu" role="menu">
-                            <li><a href="#" id="export-csv">CSV</a></li>
-                            <li><a href="#" id="export-not-csv">Something better</a></li>
-                        </ul>
-                    </div>
-                    <span class="input-group-btn">
-						<button class="btn btn-default" type="button" id="export">Go!</button>
-					</span>
-                </div>
-            </li>
-
-            <li class="list-group-item">Import</li>
-            <li class="list-group-item">
-                <input type="text" value="" style="width:100%;" id="import-window">
-                <div class="input-group">
-                    <span class="input-group-btn">
-						<button class="btn btn-default" type="button" id="import">Go!</button>
-					</span>
-                </div>
-            </li>
-            <li class="list-group-item">Segcolor</li>
-			<div class="input-group">
-                    <span class="input-group-addon">
-						<input type="checkbox" id="random-color">
-					</span>
-                    <input disabled type="text" class="form-control" value="Random Color per segment">
-                </div>
-            <div class="">
-                <div class="well">
-                    <div class="input-group colorpicker-component edcolorpicker ">
-                        <span class="input-group-addon"><i></i></span>
-                        <input type="text" value="#00ff00" class="form-control" />
-                    </div>
-
-                </div>         
+        </li>
+    </div>
+    <div class="row" id="import-div" style="display:none;">
+        <li class="list-group-item">Import</li>
+        <li class="list-group-item">
+            <!-- Temporary testing input -->
+            <input type="text" value="442,397,350,350,3027087,350,350,241,343,2981172,241,343,134,406,13003684,134,406,213,297,9469392,213,297,374,288,8014889,374,288,442,397,8153250,666,441,550,500,415047,550,500,414,498,1622046,414,498,290,447,2375365,290,447,404,564,9270224,404,564,554,560,4416223,554,560,666,441,15140463,237,440,137,539,415047,137,539,33,509,1622046,33,509,-8,360,2375365,-8,360,7,557,9270224,7,557,151,577,4416223,151,577,237,440,15140463,534,433,653,256,16457187,653,256,826,266,1311853,826,266,900,450,16174769,900,450,795,331,6686192,795,331,677,340,7867499,677,340,534,433,16333155,-100,200,-100,650,13468775,-100,650,1000,650,11225325,1000,200,1000,650,8485526,1000,200,-100,200,2984847," style="width:100%;" id="import-window">
+            <div class="input-group-inverse">
+                <span class="input-group-btn">
+					<button class="btn btn-default" type="button" id="import">Go!</button>
+				</span>
             </div>
-			<input type="button" id="do-bsp" value="EasyBSP"></input>
-        </ul>
+        </li>
+    </div>
+    <div class="row" id="help-div" style="display:none;">
+        <li class="list-group-item">
+            <p>
+                <h4>Editor interaction</h4>
+                <pre>Click         : Select a point</pre>
+                <pre>Ctrl - click  : Select a vertex and all linked vertices</pre>
+                <pre>Drag          : move a vertex (or selected vertices) around, or do a group selection if you didn't click on a vertex</pre>
+                <pre>Ctrl - drag   : Move around the map</pre>
+                <pre>Shift - click : Create a new vertex, or link the currently selected vertex with the one you clicked on </pre>
+
+
+                <br>
+                <h4>Keyboard commands</h4>
+                <pre>Ctrl - c      : Copy the current selection</pre>
+                <pre>Ctrl - v      : Paste the last copied selection</pre>
+                <pre>Del           : Delete selection </pre>
+                <pre>m             : Toggle the menu </pre>
+
+                <br>
+                <h4>Other</h4>
+                <pre>Mousewheel    : Zoom in and out</pre>
+            </p>
+        </li>
     </div>
 </div>
 
