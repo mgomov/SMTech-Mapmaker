@@ -160,9 +160,9 @@ var Editor = function(vertices, segments) {
     });
 	
 	$("#do-bsp").click(function(e){
-		var ebsp = new EasyBSP(ed.vertices, ed.segments);
-		log([ebsp]);
-		ebsp.partition();
+		ed.ebsp = new EasyBSP(ed.vertices, ed.segments);
+		log([ed.ebsp]);
+		ed.ebsp.partition();
 	});
 	
 	// segment colorpicker things
@@ -338,10 +338,9 @@ Editor.prototype.mouseUp = function(e) {
     this.mouseIsDown = false;
 };
 
-Editor.prototype.mouseClick = function(e) {
+Editor.prototype.mouseClick = function(e) {	
     // shift is the main modifier in the program
     if (e.shiftKey) {
-		log(['shifty', this.selected]);
         // if there wasn't a vertex picked in mousedown, create a new vertex
         if (!this.selected) {
             this.vertices.push(new vertex(e.x / this.zoom - this.panPos.x, e.y / this.zoom - this.panPos.y));
@@ -376,7 +375,12 @@ Editor.prototype.mouseClick = function(e) {
 				this.vertices.push(new vertex(e.x / this.zoom - this.panPos.x, e.y / this.zoom - this.panPos.y));
 			}
         }
-    } else {
+    } else if(e.altKey){
+		log(['alted', this.ebsp]);
+		
+		this.ebsp.traverse({x:e.x / this.zoom - this.panPos.x, y: e.y / this.zoom - this.panPos.y});
+		
+	} else {
         // reset the color of the last-picked vertex, since it's being unselected
         if (this.selected) {
             this.selected.currentColor = this.selected.color;

@@ -5,12 +5,10 @@ var EasyBSP = function(verts, segs){
 }
 
 EasyBSP.prototype.partition = function(){
-	log([this.verts, this.segs]);
 	for(var i = 0; i < this.segs.length; i++){
 		this.lines.push(new line(this.segs[i][0], this.segs[i][1]));
 		
 	}
-	log([this.lines]);
 	
 	// the line to do the first partition step along
 	// TODO pick a better initial line
@@ -18,7 +16,7 @@ EasyBSP.prototype.partition = function(){
 	var split = this.lines.splice(parseInt(this.lines.length / 2, 10), 1)[0];
 	
 	// create the BSP tree
-	head = new BSPNode(split, this.lines, 10);
+	this.head = new BSPNode(split, this.lines, 3);
 	
 	// for debugging, clear verts&segs
 	this.segs.length = 0;
@@ -27,13 +25,10 @@ EasyBSP.prototype.partition = function(){
 	var ezbsp = this;
 	var _additrs = 0
 	function addAll(node){
-		//console.log(node);
+		// debug
 		_additrs++;
-		console.log(_additrs);
 		if(node == undefined || node.value == undefined ) return;
-		
-		
-		
+
 		if(!(node.ahead == undefined) && node.ahead.length && node.ahead.length >0){
 			var color = '#'+Math.floor(Math.random()*16777215).toString(16);
 			var arr = node.ahead;
@@ -74,9 +69,9 @@ EasyBSP.prototype.partition = function(){
 		ezbsp.verts.push(v1);
 		ezbsp.verts.push(v2);
 		
-	}
+	};
 	
-	addAll(head);
+	addAll(this.head);
 	
 	v1 = new vertex(split.v1.x, split.v1.y);
 	v2 = new vertex(split.v2.x, split.v2.y);
@@ -84,6 +79,36 @@ EasyBSP.prototype.partition = function(){
 	this.verts.push(v1);
 	this.verts.push(v2);
 }
+
+EasyBSP.prototype.traverse = function(position){
+	
+	log([this.head]);
+	
+	this.verts.length = 0;
+	this.segs.length = 0;
+	
+	var ezbsp = this;
+	
+	var traverse = function(node, pos){
+		log([node]);
+		if(node.value != undefined){
+			v1 = new vertex(node.value.v1.x, node.value.v1.y);
+			v2 = new vertex(node.value.v2.x, node.value.v2.y);
+			ezbsp.verts.push(v1);
+			ezbsp.verts.push(v2);
+			ezbsp.segs.push([v1, v2, "#00ff00"]);
+			if(node.value.position(pos) <= 0){
+				traverse(node.ahead, pos);
+			} else {
+				traverse(node.behind, pos);
+			}
+		}
+	};
+	
+	traverse(this.head, position);
+	
+	
+};
 
 var _nidx = 0;
 
@@ -97,14 +122,11 @@ var BSPNode = function(divider, lines, limit){
 	
 	// not sure if this has to be stored
 	var len = lines.length;
-	log(['new bsp node', this, lines]);
 	if(len > limit){
 		if(this.ahead.length > limit){
-			console.log("creating ahead for " + lines.length + " " + len);
 			this.ahead = new BSPNode(this.ahead.splice(0, 1)[0], this.ahead, limit);
 		}
 		if(this.behind.length > limit){
-		console.log("creating behind for " + lines.length + " " + len);
 			this.behind = new BSPNode(this.behind.splice(0, 1)[0], this.behind, limit);
 		}
 	}
@@ -148,3 +170,4 @@ BSPNode.prototype.partition = function(splitOriginal, lines){
 	this.ahead = ahead;
 	this.behind = behind;
 };
+
