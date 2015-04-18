@@ -20,7 +20,7 @@ window.onload = function() {
         }
     }
 
-    for (var i = 0; i < 20; i++) {
+    for (var i = 0; i < 100; i++) {
         segments.push([vertices[Math.floor(Math.random() * vertices.length)], vertices[Math.floor(Math.random() * vertices.length)], "#00ff00"]);
     }
 
@@ -43,7 +43,6 @@ window.onload = function() {
     });
 
     $('.dropdown-persist').on('click', function(event) {
-        log([this]);
         $(this).parent().toggleClass('open');
     });
 

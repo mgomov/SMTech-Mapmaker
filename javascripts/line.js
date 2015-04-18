@@ -69,3 +69,7 @@ line.prototype.intersect = function(other) {
     // if line1 and line2 are segments, they intersect if both of the above are true
     return result;
 };
+
+line.prototype.ptDist = function(v){
+
+}

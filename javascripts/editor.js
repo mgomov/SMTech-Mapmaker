@@ -47,6 +47,7 @@ var Editor = function(vertices, segments) {
         maxBuffered: 10,
         buffer: [],
     };
+	this.randomPasteColors = true;
 
     // panning logic
     this.panning = false;
@@ -59,12 +60,12 @@ var Editor = function(vertices, segments) {
 
     // grid logic
     this.gridHeight = 50;
-    this.snapToGridX = false;
-    this.snapToGridY = false;
+    this.snapToGridX = true;
+    this.snapToGridY = true;
 
     // current segment color to apply to new segments
     this.segColor = "#00ff00";
-    this.randomColor = false;
+    this.randomColor = true;
 
     // zoom logic
     this.zoom = 1;
@@ -76,10 +77,12 @@ var Editor = function(vertices, segments) {
     this.keydown = this.keyDown.bind(this);
     this.mwheel = this.scrollWheel.bind(this);
 
+	// print debugging stats
+	this.debug = true;
     var ed = this;
 
     // convenience, select the seglinked vertex
-    this.selectLinked = false;
+    this.selectLinked = true;
 
     // UI hooks
     $("#snap-to-grid-x").click(function() {
@@ -99,6 +102,15 @@ var Editor = function(vertices, segments) {
             ed.selectLinked = false;
         }
     });
+	
+	$("#random-paste-color").click(function() {
+        var $this = $(this);
+        if ($this.is(':checked')) {
+            ed.randomPasteColors = true;
+        } else {
+            ed.randomPasteColors = false;
+        }
+    });
 
     $("#snap-to-grid-y").click(function() {
         var $this = $(this);
@@ -108,7 +120,17 @@ var Editor = function(vertices, segments) {
             ed.snapToGridY = false;
         }
     });
-
+	
+	
+	$("#debugging-info").click(function() {
+        var $this = $(this);
+        if ($this.is(':checked')) {
+            ed.debug = true;
+        } else {
+            ed.debug = false;
+        }
+    });
+	
     $("#random-color").click(function() {
         var $this = $(this);
         if ($this.is(':checked')) {
@@ -119,9 +141,13 @@ var Editor = function(vertices, segments) {
             $("#color-input").prop('disabled', false);
         }
     });
-
+	
     $("#grid-size-go").click(function(e) {
-        ed.gridHeight = parseInt($("#grid-size").val());
+		var ghval = parseInt($("#grid-size").val());
+		if(ghval < 5){
+			ghval = 5;
+		}
+        ed.gridHeight = ghval;
     });
 
     $("#import-toggle").click(function(e) {
@@ -148,17 +174,16 @@ var Editor = function(vertices, segments) {
         }
     });
 
+	
+	
     $("#import").click(function(e) {
-        log(['importing']);
         csv = $("#import-window").val();
-        log([csv]);
 
         // clear
         ed.vertices.length = 0;
         ed.segments.length = 0;
 
         tokens = csv.split(',');
-        log([tokens]);
 
         // broken comma means iterate to length - 1... blame the main program's loader for this one
         for (var i = 0; i < tokens.length - 1; i += 5) {
@@ -173,7 +198,6 @@ var Editor = function(vertices, segments) {
             v2.connected.push(v1);
             ed.vertices.push(v1);
             ed.vertices.push(v2);
-            console.log([v1, v2, color]);
             ed.segments.push([v1, v2, color]);
         }
     });
@@ -184,10 +208,8 @@ var Editor = function(vertices, segments) {
             csv = "";
             var segs = ed.segments;
             for (var i = 0; i < segs.length; i++) {
-                log([segs[i][2]], segs[i][2].slice(1, 6));
                 csv += segs[i][0].pos.x + "," + segs[i][0].pos.y + "," + segs[i][1].pos.x + "," + segs[i][1].pos.y + "," + parseInt(segs[i][2].replace("#", ""), 16) + (i == segs.length - 1 ? "," : ",") /* broken loader, broken export, fix loader please */ ;
             }
-            console.log(csv);
             $("#export-window").val(csv);
             console.log($("#export-window").val());
         }
@@ -195,7 +217,6 @@ var Editor = function(vertices, segments) {
 
     $("#do-bsp").click(function(e) {
         ed.ebsp = new EasyBSP(ed.vertices, ed.segments);
-        log([ed.ebsp]);
         ed.ebsp.partition();
     });
 
@@ -259,13 +280,9 @@ Editor.prototype.keyDown = function(e) {
 
                 this.vertices.splice(this.vertices.indexOf(vtx), 1);
             }
-
-            log(['del']);
             break;
         case this.keyEnum.COPY:
             if (e.ctrlKey) {
-                log(['copy']);
-
                 // add vertices that will be copied to an array
                 var toCopy = [];
                 toCopy.push(this.selected);
@@ -278,8 +295,6 @@ Editor.prototype.keyDown = function(e) {
             break;
         case this.keyEnum.PASTE:
             if (e.ctrlKey) {
-                log(['paste']);
-
                 // clear any selections
                 this.selected.currentColor = this.selected.color;
                 this.selected = false;
@@ -417,7 +432,6 @@ Editor.prototype.mouseClick = function(e) {
             }
         }
     } else if (e.altKey) {
-        log(['alted', this.ebsp]);
         this.ebsp.traverse({
             x: e.x / this.zoom - this.panPos.x,
             y: e.y / this.zoom - this.panPos.y
@@ -599,7 +613,12 @@ Editor.prototype.createCopy = function(toCopy, cpySegs) {
     // verts list, create a new seg with the copied verts as endpoints
     for (var i = 0; i < cpySegs.length; i++) {
         if (cpySegs[i][0].__idx != undefined && cpySegs[i][1].__idx != undefined) {
-            copy.segs.push([copy.verts[cpySegs[i][0].__idx], copy.verts[cpySegs[i][1].__idx], cpySegs[i][2]]);
+			if(this.randomPasteColors){
+				copy.segs.push([copy.verts[cpySegs[i][0].__idx], copy.verts[cpySegs[i][1].__idx], '#' + Math.floor(Math.random() * 16777215).toString(16)]);
+			} else {
+				copy.segs.push([copy.verts[cpySegs[i][0].__idx], copy.verts[cpySegs[i][1].__idx], cpySegs[i][2]]);
+			}
+			
             copy.verts[cpySegs[i][0].__idx].connected.push(copy.verts[cpySegs[i][1].__idx]);
             copy.verts[cpySegs[i][1].__idx].connected.push(copy.verts[cpySegs[i][0].__idx]);
         }

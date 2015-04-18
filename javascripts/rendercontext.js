@@ -39,6 +39,9 @@ var RenderContext = function(context, vertices, segments, editor) {
     this.segments = segments;
     this.vertices = vertices;
     this.editor = editor;
+	this.lastLoop = (new Date()).getMilliseconds();
+	this.count = 1;
+	this.fps = 0;
 };
 
 RenderContext.prototype.render = function(renderContext, editor) {
@@ -79,6 +82,26 @@ RenderContext.prototype.render = function(renderContext, editor) {
         context.stroke();
     }
 
+	if(editor.debug){
+		context.font = "16px serif";
+		// color fps based on how high it is
+		context.fillStyle = this.fps < 50 ? (this.fps < 30? (this.fps < 15? "#ff0000" : "#ff8000") : "#ffff00") : "#00ff00"
+		context.fillText("FPS: " + this.fps, 0, 16);
+		context.fillStyle="#00ff00";
+		context.fillText("Verts: " + editor.vertices.length, 0, 32);
+		context.fillText("Segs: " + editor.segments.length, 0, 48);
+	}
+	
+	// calculate fps
+	var currentLoop = (new Date()).getMilliseconds();
+    if (this.lastLoop > currentLoop) {
+      this.fps = this.count;
+      this.count = 1;
+    } else {
+      this.count += 1;
+    }
+    this.lastLoop = currentLoop;
+	
     // go to the next frame
     window.requestAnimationFrame(function() {
         renderContext.render(renderContext, editor);
