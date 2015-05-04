@@ -3,13 +3,72 @@ var EasyBSP = function(verts, segs) {
     this.segs = segs;
     this.lines = [];
 }
-
-EasyBSP.prototype.partition = function() {
+var __ed;
+// editor for debugging
+EasyBSP.prototype.partition = function(editor) {
     for (var i = 0; i < this.segs.length; i++) {
-        this.lines.push(new line(this.segs[i][0], this.segs[i][1]));
-
+		var ln = new line(this.segs[i][0], this.segs[i][1], editor);
+		ln._idx = i;
+        this.lines.push(ln);
     }
-
+	__ed = editor;
+	console.log(this.ed);
+	//var lines = this.lines;
+	
+	// console.clear();
+	// console.log(editor.towards);
+	
+	// for(var i = 0; i < this.segs.length; i++){
+		// this.segs[i][2] = "#00ff00";
+	// }
+	
+	// for(var i = 0; i < lines.length; i++){
+		// /*
+		// var normal = lines[i].normal(true);
+		// var v1 = new vertex(normal.v1.x, normal.v1.y);
+		// var v2 = new vertex(normal.v2.x, normal.v2.y);
+		// this.verts.push(v1);
+		// this.verts.push(v2);
+		// this.segs.push([v1, v2, "#ff0000"]);
+		
+		
+		
+		// for(var j = 0; j < lines.length; j++){
+			// if(i == j) continue;
+			// var dir = lines[i].ahead(lines[j]);
+			// var ln = lines[j].mid();
+			// var v1 = new vertex(ln.x, ln.y);
+			// var v2 = new vertex(ln.x + dir.x, ln.y + dir.y);
+			// this.verts.push(v1);
+			// this.verts.push(v2);
+			// this.segs.push([v1, v2, "#ff0000"]);  
+		// }
+		// */
+	
+	// }
+	
+	// var concave = true;
+	// for(var i = 0; i < lines.length; i++){
+		// lines[i].__idx = i;
+		// console.log("Testing idx " + i);
+		// for(var j = 0; j < lines.length; j++){
+			// if(i == j) continue;
+			// if(lines[j].ahead(lines[i], editor.towards)){
+				// log([lines[j], "ahead", lines[i]]);
+			// } else {
+				// concave = false;
+			// }
+		// }
+	// }
+	
+	// log(["concavity:", concave]);
+	
+	// log(['segs', this.segs]);
+	
+	// // debugging some normal stuff
+	// return;
+	
+	
     // create the BSP tree
 	var limit = 3;
 	// dumb heuristic, just picks a random line
@@ -72,7 +131,9 @@ EasyBSP.prototype.partition = function() {
         ezbsp.verts.push(v2);
 
     };
-
+	
+	
+	__ed.vertices.push(new vertex(0, 0));
     addAll(this.head);
 };
 
@@ -167,7 +228,7 @@ EasyBSP.prototype.balancedHeuristic = function(lines){
 	var splitter;
 	
 	var closest = Number.MAX_VALUE;
-	var closestIdx = 0;
+	var closestIdx = -1;
 	
 	for(var i = 0; i < lines.length; i++){
 		var current = lines[i];
@@ -175,6 +236,10 @@ EasyBSP.prototype.balancedHeuristic = function(lines){
 		
 		for(var j = 0; j < lines.length; j++){
 			if(i == j){
+				continue;
+			}
+			if(lines[j].__used){
+				console.log("Skipping used line");
 				continue;
 			}
 			
@@ -189,22 +254,24 @@ EasyBSP.prototype.balancedHeuristic = function(lines){
 			}
 		}
 		
-		if(Math.abs((lines.length / 2) - count) < closest){
-		
+		if(Math.abs((lines.length / 2) - count) < closest && !lines[i].__used){
 			closest = Math.abs((lines.length / 2) - count);
 			closestIdx = i;
 		} 
 	}
 	
+	if(closestIdx == -1){
+		console.log("Couldn't find an unused segment");
+	}
+	
 	splitter = lines.splice(closestIdx, 1)[0];
+	
+	splitter.__used = true;
 	
 	return splitter;
 };
 
 EasyBSP.prototype.traverse = function(position) {
-
-    log(["TRAVERSING", "", "", this.head]);
-
     this.verts.length = 0;
     this.segs.length = 0;
 
@@ -281,7 +348,6 @@ EasyBSP.prototype.traverse = function(position) {
 }
 	*/
     var traverse = function(node, pos) {
-        log([node]);
         if (node.value != undefined) {
 
 
@@ -359,15 +425,44 @@ var _nidx = 0;
 
 var BSPNode = function(lines, heuristic, limit) {
     this.__idx = _nidx++;
+	log([this.__idx, lines.length, lines]);
+	var pt = this.grabCenter(lines);
     this.value = heuristic(lines);
     this.ahead = [];
     this.behind = [];
     this.limit = limit;
+	if(this.concavity(lines, pt)){
+		console.log("fully concave node");
+		this.ahead = lines;
+		return;
+	}
     this.partition(this.value, lines);
-
+	
+	// debug yeah yeah
+	__ed.segments.push([new vertex(this.value.v1.x, this.value.v1.y), new vertex(this.value.v2.x, this.value.v2.y),"#00ff00"]);
+	
+	// hopefully leafy
+	this.value.__used = true;
+	this.ahead.push(this.value);
+	
+	log(["splitting on", this.value]);
+	
+	if(!this.concavity(this.ahead, pt)){
+		this.ahead = new BSPNode(this.ahead, heuristic, limit);
+	} else {
+		console.log("we have leaftoff ahead");
+	}
+	
+	if(!this.concavity(this.behind, pt)){
+		this.behind = new BSPNode(this.behind, heuristic, limit);
+	} else {
+		console.log("we have leaftoff behind");
+	}
+	
+	// this is for normal 'bsp', we want 'leafy' concave bsp
+	/*
     // not sure if this has to be stored
-    var len = lines.length;
-    if (len > limit) {
+    if (lines.length > limit) {
         if (this.ahead.length > limit) {
             this.ahead = new BSPNode(this.ahead, heuristic, limit);
         }
@@ -375,6 +470,56 @@ var BSPNode = function(lines, heuristic, limit) {
             this.behind = new BSPNode(this.behind, heuristic, limit);
         }
     }
+	*/
+};
+
+BSPNode.prototype.grabCenter = function(lines){
+	var bl = {};
+	var tr = {};
+	bl.x = Number.MAX_VALUE;
+	bl.y = Number.MAX_VALUE;
+	tr.x = Number.MIN_VALUE;
+	tr.y = Number.MIN_VALUE;
+	
+	for(var i = 0; i < lines.length; i++){
+		var l = lines[i];
+		var lx = Math.min(l.v1.x, l.v2.x);
+		var ly = Math.min(l.v1.y, l.v2.y);
+		var hx = Math.max(l.v1.x, l.v2.x);
+		var hy = Math.max(l.v1.y, l.v2.y);
+		
+		if(lx < bl.x){
+			bl.x = lx;
+		}
+		if(ly < bl.y){
+			bl.y = ly;
+		}
+		if(tr.x < hx){
+			tr.x = hx;
+		}
+		if(tr.y < hy){
+			tr.y = hy;
+		}
+	}
+	//950,600,750,600,6943119,750,600,750,400,9779202,750,400,950,400,9123218,950,400,950,600,7852902,900,550,800,550,14078725,800,550,800,450,3049033,800,450,900,450,14462668,900,450,900,550,7573756,
+	var pos = {x:bl.x + (tr.x - bl.x) / 2, y:bl.y + (tr.y - bl.y) / 2};
+	//var pos = {x:tr.x, y:tr.y};
+	
+	__ed.vertices.push(new vertex(pos.x, pos.y));
+	return pos;
+}
+
+BSPNode.prototype.concavity = function(lines, por){
+	for(var i = 0; i < lines.length; i++){
+		for(var j = 0; j < lines.length; j++){
+			if(i == j) continue;
+			if(!lines[j].ahead(lines[i]), por){
+				return false;
+			}
+		}
+	}
+	
+	return true;
 };
 
 BSPNode.prototype.partition = function(splitOriginal, lines) {
@@ -394,11 +539,19 @@ BSPNode.prototype.partition = function(splitOriginal, lines) {
     split.v2.x -= run * 1000;
     split.v2.y -= rise * 1000;
 
-    for (var i = 0; i < lines.length; i++) {
+	// hmm...
+	var resplit = false;
+    
+	for (var i = 0; i < lines.length; i++) {
         var intersection = split.intersect(lines[i]);
         if (intersection.onOther) {
             nl1 = new line(new vertex(intersection.x, intersection.y), new vertex(lines[i].v1.x, lines[i].v1.y));
             nl2 = new line(new vertex(intersection.x, intersection.y), new vertex(lines[i].v2.x, lines[i].v2.y));
+			if(lines[i].__used){
+				nl1.__used = true;
+				nl2.__used = true;
+				resplit = true;
+			}
             if (split.position(nl1.v2) < 0) {
                 ahead.push(nl1);
                 behind.push(nl2);
@@ -417,4 +570,6 @@ BSPNode.prototype.partition = function(splitOriginal, lines) {
 
     this.ahead = ahead;
     this.behind = behind;
+	
+	return resplit;
 };
