@@ -80,6 +80,12 @@ var Editor = function(vertices, segments) {
 	this.textures["wall13"] = "#0000ab";
 	this.textures["wall14"] = "#ab00ab";
 	this.textures["wall15"] = "#abcde0";
+	this.textures["wall16"] = "#efgabc";
+	this.textures["wall17"] = "#abc000";
+	this.textures["wall18"] = "#abbeff";
+	this.textures["wall19"] = "#deadf0";
+	this.textures["wall20"] = "#deadbe";
+	this.textures["wall21"] = "#efc323";
 	this.segTexture = ["wall1", this.textures["wall1"]];
 
 	// 'things' (sprites, map objects)
@@ -256,6 +262,8 @@ var Editor = function(vertices, segments) {
 	$(".texture-category").click(function(e){
 		var key = e.currentTarget.innerText.replace("\n", "");
 		ed.segTexture = [key, ed.textures[key]];
+                
+                console.log(ed.segTexture);
 	});
 	
 	$(".thing-category").click(function(e){
