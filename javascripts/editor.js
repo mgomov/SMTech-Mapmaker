@@ -69,6 +69,17 @@ var Editor = function(vertices, segments) {
 	this.textures["wall2"] = "#00ff00";
 	this.textures["wall3"] = "#0000ff";
 	this.textures["wall4"] = "#ff00ff";
+	this.textures["wall5"] = "#f0f0f0";
+	this.textures["wall6"] = "#0f0f0f";
+	this.textures["wall7"] = "#ffff00";
+	this.textures["wall8"] = "#aaaa00";
+	this.textures["wall9"] = "#aa00aa";
+	this.textures["wall10"] = "#aa0000";
+	this.textures["wall11"] = "#a0a0aa";
+	this.textures["wall12"] = "#abab00";
+	this.textures["wall13"] = "#0000ab";
+	this.textures["wall14"] = "#ab00ab";
+	this.textures["wall15"] = "#abcde0";
 	this.segTexture = ["wall1", this.textures["wall1"]];
 
 	// 'things' (sprites, map objects)
